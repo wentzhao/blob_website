@@ -61,7 +61,7 @@ pinTop: 0
 
 ### GitHub Pages
 
-仓库已配置 `.github/workflows/deploy.yml`：推送到 `main` 后，GitHub Actions 会自动构建并发布到 GitHub Pages。用户站点仓库 `wentzhao.github.io` 使用根路径，地址为：
+仓库已配置 `.github/workflows/deploy.yml`：用户站点仓库 `wentzhao.github.io` 推送到 `main` 后，GitHub Actions 会自动构建并发布到 GitHub Pages。当前代码仓库 `blob_website` 会跳过该部署工作流，专门保存源代码。用户站点使用根路径，地址为：
 
 `https://wentzhao.github.io/`
 
