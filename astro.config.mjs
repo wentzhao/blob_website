@@ -25,6 +25,7 @@ import { siteConfig } from './src/config';
 // https://astro.build/config
 export default defineConfig({
   site: process.env.PUBLIC_SITE_URL || 'https://example.com',
+  base: process.env.BASE_PATH || '/',
   i18n: {
     locales: ['zh-cn', 'en'],
     defaultLocale: 'zh-cn',

@@ -49,6 +49,7 @@ pinTop: 0
 - `src/config.ts`：站点名称、文章分页遗留配置、目录深度、评论开关和许可证
 - `astro.config.mjs`：Markdown 插件、语言路由和站点 URL
 - `PUBLIC_SITE_URL`：生产环境站点地址；未配置时使用 `https://example.com`
+- `BASE_PATH`：站点部署的 URL 前缀；未配置时使用根路径 `/`
 
 当前首页按顶级分类和最近文章展示，归档页展示全部公开文章；`pageSize`、`PostPage.astro` 和 `Navi.astro` 是尚未接入主调用链的分页遗留，本项目当前不重新接入分页。
 
@@ -56,7 +57,15 @@ pinTop: 0
 
 ## 发布
 
-构建产物位于 `dist/`，可部署到 Cloudflare Pages、Netlify、Vercel 静态托管或任何静态文件服务器。部署时设置 `PUBLIC_SITE_URL`，以生成正确的 canonical URL 和 RSS 地址。当前 URL 约定只支持域名根路径，不承诺非根 `base` 路径部署。
+构建产物位于 `dist/`，可部署到 Cloudflare Pages、Netlify、Vercel 静态托管或任何静态文件服务器。部署时设置 `PUBLIC_SITE_URL`，以生成正确的 canonical URL 和 RSS 地址；如果部署在非根路径，同时设置 `BASE_PATH`，例如 `BASE_PATH=/blob_website`。
+
+### GitHub Pages
+
+仓库已配置 `.github/workflows/deploy.yml`：推送到 `main` 后，GitHub Actions 会自动构建并发布到 GitHub Pages。当前仓库的地址为：
+
+`https://wentzhao.github.io/blob_website/`
+
+首次使用时，在仓库 Settings → Pages → Build and deployment → Source 中选择 `GitHub Actions`。
 
 ## 修改日志
 
