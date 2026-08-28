@@ -35,11 +35,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       
+      - name: Configure deployment URL
+        shell: bash
+        run: |
+          if [[ "${{ github.event.repository.name }}" == "${{ github.repository_owner }}.github.io" ]]; then
+            echo "PUBLIC_SITE_URL=https://${{ github.repository_owner }}.github.io" >> "$GITHUB_ENV"
+            echo "BASE_PATH=/" >> "$GITHUB_ENV"
+          else
+            echo "PUBLIC_SITE_URL=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" >> "$GITHUB_ENV"
+            echo "BASE_PATH=/${{ github.event.repository.name }}" >> "$GITHUB_ENV"
+          fi
+
       - name: Build
         run: pnpm build
-        env:
-          PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
-          BASE_PATH: /${{ github.event.repository.name }}
 
       - name: Upload
         uses: actions/upload-pages-artifact@v3
