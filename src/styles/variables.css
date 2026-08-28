@@ -1,0 +1,75 @@
+:root {
+  --header-width: min(1180px, calc(100vw - 2rem));
+  --content-width: min(1180px, calc(100vw - 2rem));
+  --page-width: min(760px, calc(100vw - 2rem));
+  --reading-width: 720px;
+  --toc-offset-left: calc(50vw + var(--reading-width) / 2 + 2rem);
+  --toc-width: min(220px, calc((100vw - var(--reading-width)) / 2 - 2rem));
+  --category-width: 220px;
+}
+
+
+/* 颜色变量 */
+/* --bg-color               页面背景色
+ * --text-color             文字基本色，通过透明度来控制颜色深浅，分为两类
+ *     --text-color:        适用于标题、正文等需要突出显示的内容
+ *     --text-color-70      适用于次要信息、辅助文本等不需要过于突出显示的内容
+ * --link-color             彩色基本色，适用于链接、按钮等颜色突出的地方
+ * --button-hover-color     按钮鼠标悬停背景色
+ * --button-border-color    按钮边框色
+*/
+:root {
+    --bg-color: #ffffff;
+    --surface-color: #fff6f9;
+    --text-color: #202124;
+    --text-color-70: #686d76;
+    --shadow-color: rgba(32, 33, 36, 0.08);
+    --link-color: #d9467a;
+    --accent-color: #d9467a;
+    --button-hover-color: #fff0f5;
+    --button-border-color: #eadde3;
+
+    --warning-text-color: #4d3800;
+    --warning-bg-color: #fff7ed;
+    --warning-border-color: #e6a700;
+
+    --danger-text-color: #4b1113;
+    --danger-bg-color: #ffebec;
+    --danger-border-color: #e13238;
+    
+    /* 滚动条颜色 */
+    --scrollbar-thumb: #c1c1c1;
+    --scrollbar-thumb-hover: #a8a8a8;
+    --scrollbar-track: #e1e1e1;
+
+    --selection-bg-color: #d9467a;
+    --selection-text-color: #ffffff;
+  }
+
+  [data-theme="dark"] {
+    --bg-color: #17191c;
+    --surface-color: #2a2025;
+    --text-color: #e6e8eb;
+    --text-color-70: #a7adb7;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --link-color: #f58bb2;
+    --accent-color: #f58bb2;
+    --button-hover-color: #35262d;
+    --button-border-color: #49343d;
+
+    --warning-text-color: #f2d680;
+    --warning-bg-color: #332a00;
+    --warning-border-color: #ad8002;
+
+    --danger-text-color: #f2a0a3;
+    --danger-bg-color: #3b1d1e;
+    --danger-border-color: #e13238;
+    
+    /* 滚动条颜色 */
+    --scrollbar-thumb: #4b4c4e;
+    --scrollbar-thumb-hover: #37383a;
+    --scrollbar-track: #1a202c;
+
+    --selection-bg-color: #923c61;
+    --selection-text-color: #ffffff;
+  }

@@ -1,0 +1,151 @@
+---
+import { Icon } from "astro-icon/components";
+import { i18n } from "astro:config/client";
+import i18nit from "@i18n/translation";
+import { siteConfig } from "@/config";
+import { topSections } from "@/content/navigation";
+import { baseUrl, getRelativeLocaleUrl } from "@utils/url-utils";
+import { getBlogEntrySort } from "@utils/content-utils";
+import ThemeIcon from "./control/ThemeIcon.astro";
+
+const currentLang = Astro.currentLocale || i18n!.defaultLocale;
+const t = i18nit(currentLang);
+const indexPage = getRelativeLocaleUrl(currentLang, "/");
+const archivePage = getRelativeLocaleUrl(currentLang, "/archives/");
+const aboutPage = getRelativeLocaleUrl(currentLang, "/about/");
+const rssPage = baseUrl("/rss.xml");
+const localeCodes = i18n!.locales.map((locale) => typeof locale === "string" ? locale : locale.path);
+const currentPath = `${Astro.url.pathname}${Astro.url.search}`;
+const currentPathWithoutLocale = currentLang === i18n!.defaultLocale
+  ? currentPath
+  : currentPath.replace(new RegExp(`^/${currentLang}(?=/|$)`), "") || "/";
+const articlePrefix = "/blog/";
+const currentPathname = Astro.url.pathname.replace(new RegExp(`^/${currentLang}(?=/|$)`), "") || "/";
+const articleId = currentPathname.startsWith(articlePrefix)
+  ? currentPathname.slice(articlePrefix.length).replace(/\/$/, "")
+  : null;
+const supportedPagePaths = new Set(["/", "/about/", "/friends/", "/archives/"]);
+
+const languageUrls = Object.fromEntries(await Promise.all(localeCodes.map(async (locale) => {
+  if (!articleId) {
+    return [locale, supportedPagePaths.has(currentPathname)
+      ? getRelativeLocaleUrl(locale, currentPathWithoutLocale)
+      : getRelativeLocaleUrl(locale, "/")] as const;
+  }
+
+  const targetEntries = await getBlogEntrySort(locale);
+  const targetHasArticle = targetEntries.some((entry) => entry.id === articleId);
+  return [locale, targetHasArticle
+    ? getRelativeLocaleUrl(locale, `/blog/${articleId}`)
+    : getRelativeLocaleUrl(locale, "/")] as const;
+})));
+---
+
+<header id="main-header" class="site-header">
+  <div class="site-header__inner">
+    <a class="site-brand" href={indexPage} aria-label={`${siteConfig.title} 首页`}>
+      <span class="site-brand__mark" aria-hidden="true">/</span>
+      <span>{siteConfig.title}</span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href={indexPage}>{t("header.home")}</a>
+      <a href={archivePage}>{t("header.archive")}</a>
+      {topSections.slice(0, 3).map((section) => <a href={getRelativeLocaleUrl(currentLang, section.path)}>{section.label}</a>)}
+      <a href={aboutPage}>{t("header.about")}</a>
+    </nav>
+
+    <div class="site-tools">
+      <button id="search-button" class="icon-button" type="button" aria-label={t("search.placeholder")}>
+        <Icon name="fa6-solid:magnifying-glass" class="h-4 w-4" />
+      </button>
+      <ThemeIcon class="icon-button" />
+      <div class="language-switcher">
+        <button id="language-button" class="icon-button" type="button" aria-label="切换语言" aria-expanded="false">
+          <Icon name="fa6-solid:globe" class="h-4 w-4" />
+        </button>
+        <div id="language-menu" class="language-menu hidden">
+          {localeCodes.map((locale) => (
+            <a href={languageUrls[locale]} class:list={{ active: currentLang === locale }}>
+              {locale === i18n!.defaultLocale ? "中文" : "English"}
+            </a>
+          ))}
+        </div>
+      </div>
+      <button id="mobile-menu-button" class="icon-button mobile-only" type="button" aria-label="打开导航" aria-expanded="false">
+        <Icon name="fa6-solid:bars" class="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-menu-container" class="mobile-menu hidden">
+    <div id="mobile-menu-overlay" class="mobile-menu__overlay"></div>
+    <nav id="mobile-menu-drawer" class="mobile-menu__drawer" aria-label="移动端导航">
+      <div class="mobile-menu__top">
+        <strong>{siteConfig.title}</strong>
+        <button id="mobile-menu-close" class="icon-button" type="button" aria-label="关闭导航">
+          <Icon name="fa6-solid:xmark" class="h-4 w-4" />
+        </button>
+      </div>
+      <a href={indexPage}>{t("header.home")}</a>
+      <a href={archivePage}>{t("header.archive")}</a>
+      {topSections.map((section) => (
+        <a href={getRelativeLocaleUrl(currentLang, section.path)}>
+          <span>{section.label}</span><small>{section.description}</small>
+        </a>
+      ))}
+      <a href={aboutPage}>{t("header.about")}</a>
+      <a href={rssPage}>RSS 订阅</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header { position: sticky; top: 0; z-index: 50; border-top: 14px solid var(--accent-color); background: var(--bg-color); }
+  .site-header__inner { width: var(--header-width); min-height: 5rem; margin: auto; display: flex; align-items: center; gap: 3rem; }
+  .site-brand { display: inline-flex; align-items: center; gap: .45rem; font-size: 1.05rem; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+  .site-brand:hover { color: var(--link-color); }
+  .site-brand__mark { color: var(--accent-color); font: 700 1.5rem/1 "JetBrains Mono", monospace; }
+  .site-nav { display: flex; align-items: center; gap: 1.55rem; color: var(--text-color-70); font-size: .72rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+  .site-nav a:hover { color: var(--link-color); }
+  .site-tools { margin-left: auto; display: flex; align-items: center; gap: .45rem; }
+  .icon-button { width: 2.25rem; height: 2.25rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: .35rem; color: var(--text-color-70); background: transparent; cursor: pointer; }
+  .icon-button:hover { color: var(--link-color); background: var(--button-hover-color); }
+  .language-switcher { position: relative; }
+  .language-menu { position: absolute; right: 0; top: 2.8rem; min-width: 7rem; padding: .35rem; border: 1px solid var(--button-border-color); border-radius: .55rem; background: var(--bg-color); box-shadow: 0 12px 30px var(--shadow-color); }
+  .language-menu a { display: block; padding: .45rem .6rem; border-radius: .35rem; color: var(--text-color-70); font-size: .85rem; }
+  .language-menu a:hover, .language-menu a.active { background: var(--button-hover-color); color: var(--link-color); }
+  .mobile-only { display: none; }
+  @media (max-width: 1023px) { .site-header { border-top-width: 8px; } .site-header__inner { width: min(var(--content-width), calc(100vw - 1.5rem)); min-height: 4.25rem; } .site-nav { display: none; } .mobile-only { display: inline-flex; } }
+  .mobile-menu { position: fixed; inset: 0; z-index: 100; }
+  .mobile-menu__overlay { position: absolute; inset: 0; background: rgb(0 0 0 / .35); }
+  .mobile-menu__drawer { position: absolute; right: 0; top: 0; bottom: 0; width: min(88vw, 22rem); display: flex; flex-direction: column; gap: .25rem; padding: 1.25rem; overflow: auto; background: var(--bg-color); box-shadow: -12px 0 30px var(--shadow-color); }
+  .mobile-menu__top { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; margin-bottom: .5rem; border-bottom: 1px solid var(--button-border-color); }
+  .mobile-menu__drawer > a { display: flex; flex-direction: column; gap: .18rem; padding: .7rem .75rem; border-radius: .45rem; color: var(--text-color); }
+  .mobile-menu__drawer > a:hover { background: var(--button-hover-color); color: var(--link-color); }
+  .mobile-menu__drawer small { color: var(--text-color-70); font-size: .75rem; line-height: 1.45; }
+</style>
+
+<script>
+  function initHeader() {
+    const container = document.getElementById("mobile-menu-container");
+    const openButton = document.getElementById("mobile-menu-button");
+    const closeButton = document.getElementById("mobile-menu-close");
+    const overlay = document.getElementById("mobile-menu-overlay");
+    const languageButton = document.getElementById("language-button");
+    const languageMenu = document.getElementById("language-menu");
+    if (!container || !openButton || openButton.dataset.bound === "true") return;
+    openButton.dataset.bound = "true";
+
+    const closeMenu = () => { container.classList.add("hidden"); document.body.style.overflow = ""; openButton.setAttribute("aria-expanded", "false"); };
+    openButton.addEventListener("click", () => { container.classList.remove("hidden"); document.body.style.overflow = "hidden"; openButton.setAttribute("aria-expanded", "true"); });
+    closeButton?.addEventListener("click", closeMenu);
+    overlay?.addEventListener("click", closeMenu);
+    container.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+    languageButton?.addEventListener("click", (event) => { event.stopPropagation(); const isHidden = languageMenu?.classList.toggle("hidden"); languageButton.setAttribute("aria-expanded", String(!isHidden)); });
+    document.addEventListener("click", (event) => { if (event.target instanceof Node && languageMenu && languageButton && !languageMenu.contains(event.target) && !languageButton.contains(event.target)) { languageMenu.classList.add("hidden"); languageButton.setAttribute("aria-expanded", "false"); } });
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape") { closeMenu(); languageMenu?.classList.add("hidden"); } });
+  }
+  document.addEventListener("DOMContentLoaded", initHeader);
+  document.addEventListener("astro:page-load", initHeader);
+</script>

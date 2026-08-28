@@ -1,0 +1,81 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getRelativeLocaleUrl } from "@utils/url-utils";
+import { formatMonthDay } from "@utils/time";
+import type { NavigationSection } from "@/content/navigation";
+
+interface Props {
+  section: NavigationSection;
+  entries: CollectionEntry<"blog">[];
+  lang: string;
+}
+
+const { section, entries, lang } = Astro.props;
+const sectionEntries = entries
+  .filter((entry) => entry.data.category === section.label)
+  .slice(0, 3);
+const sectionPath = getRelativeLocaleUrl(lang, section.path);
+---
+
+<section class="knowledge-section" id={section.id}>
+  <div class="knowledge-section__heading">
+    <div>
+      <p class="eyebrow">{section.id}</p>
+      <h2><a href={sectionPath}>{section.label}</a></h2>
+      <p class="muted">{section.description}</p>
+    </div>
+    <a class="section-link" href={sectionPath}>查看全部 <span aria-hidden="true">→</span></a>
+  </div>
+
+  <div class="knowledge-section__body">
+    <div class="directory-list">
+      {section.children.map((child) => (
+        <div class="directory-item">
+          <span class="directory-item__icon" aria-hidden="true">⌁</span>
+          <span>
+            <strong>{child.label}</strong>
+            <small>{child.description}</small>
+          </span>
+        </div>
+      ))}
+    </div>
+
+    <div class="recent-list">
+      <p class="recent-list__label">最近更新</p>
+      {sectionEntries.length > 0 ? sectionEntries.map((entry) => (
+        <a href={getRelativeLocaleUrl(lang, `/blog/${entry.id}`)} class="recent-item">
+          <span>{entry.data.title}</span>
+          <time datetime={entry.data.pubDate.toISOString()}>{formatMonthDay(entry.data.pubDate, lang)}</time>
+        </a>
+      )) : <p class="muted recent-empty">暂无公开文章</p>}
+    </div>
+  </div>
+</section>
+
+<style>
+  .knowledge-section { border-top: 1px solid var(--button-border-color); padding: 3.5rem 0 4rem; }
+  .knowledge-section__heading { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-end; }
+  .knowledge-section h2 { margin: .35rem 0 .45rem; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; letter-spacing: -.03em; }
+  .knowledge-section h2 a:hover, .section-link:hover, .recent-item:hover { color: var(--link-color); }
+  .knowledge-section p { margin: 0; }
+  .eyebrow, .recent-list__label { color: var(--accent-color); font: 700 .72rem/1.2 "JetBrains Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+  .section-link { color: var(--text-color-70); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .knowledge-section__body { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr); gap: 4rem; margin-top: 2rem; }
+  .directory-list, .recent-list { display: flex; flex-direction: column; gap: 0; }
+  .directory-item, .recent-item { transition: background .2s ease, color .2s ease; }
+  .directory-item { display: flex; gap: .75rem; padding: .9rem 0; border-bottom: 1px solid var(--button-border-color); }
+  .directory-item:hover, .recent-item:hover { background: var(--button-hover-color); }
+  .directory-item__icon { color: var(--accent-color); font-size: 1.3rem; line-height: 1; }
+  .directory-item strong, .directory-item small { display: block; }
+  .directory-item small { color: var(--text-color-70); margin-top: .2rem; font-size: .82rem; }
+  .recent-list__label { margin-bottom: .25rem; }
+  .recent-item { display: flex; justify-content: space-between; gap: .75rem; padding: .7rem 0; border-bottom: 1px solid var(--button-border-color); }
+  .recent-item time { flex: none; color: var(--text-color-70); font-size: .8rem; }
+  .recent-empty { padding: .5rem .65rem; font-size: .9rem; }
+  @media (max-width: 640px) {
+    .knowledge-section { padding: 2.75rem 0 3rem; }
+    .knowledge-section__heading { display: block; }
+    .section-link { display: inline-block; margin-top: .75rem; }
+    .knowledge-section__body { grid-template-columns: 1fr; gap: 2rem; }
+  }
+</style>

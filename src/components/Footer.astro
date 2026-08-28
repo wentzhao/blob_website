@@ -1,0 +1,22 @@
+---
+import { profileConfig } from "../config";
+import { baseUrl } from "@utils/url-utils";
+
+const rssUrl = baseUrl("/rss.xml");
+---
+
+<footer class="site-footer">
+  <div>© {profileConfig.startYear} - {new Date().getFullYear()} {profileConfig.name}</div>
+  <div class="site-footer__links">
+    <a href={rssUrl}>RSS</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://github.com/Motues/Momo" target="_blank" rel="noreferrer">基于 Momo</a>
+  </div>
+</footer>
+
+<style>
+  .site-footer { width: var(--content-width); margin: 3rem auto 0; padding: 1.5rem 0 2rem; display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--button-border-color); color: var(--text-color-70); font-size: .82rem; }
+  .site-footer__links { display: flex; gap: .5rem; }
+  .site-footer a:hover { color: var(--link-color); }
+  @media (max-width: 640px) { .site-footer { width: min(var(--content-width), calc(100vw - 1.5rem)); display: block; } .site-footer__links { margin-top: .5rem; } }
+</style>

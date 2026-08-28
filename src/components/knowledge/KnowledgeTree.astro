@@ -1,0 +1,51 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getRelativeLocaleUrl } from "@utils/url-utils";
+import { topSections } from "@/content/navigation";
+
+interface Props {
+  entries: CollectionEntry<"blog">[];
+  activeId?: string;
+  lang: string;
+}
+
+const { entries, activeId, lang } = Astro.props;
+---
+
+<aside class="knowledge-tree" aria-label="知识库导航">
+  <p class="knowledge-tree__label">Knowledge base</p>
+  <a class="knowledge-tree__home" href={getRelativeLocaleUrl(lang, "/")}>全部内容</a>
+  {topSections.map((section) => {
+    const sectionEntries = entries.filter((entry) => entry.data.category === section.label);
+    return (
+      <div class="knowledge-tree__section">
+        <a class="knowledge-tree__section-link" href={getRelativeLocaleUrl(lang, section.path)}>{section.label}</a>
+        <div class="knowledge-tree__entries">
+          {sectionEntries.map((entry) => (
+            <a
+              href={getRelativeLocaleUrl(lang, `/blog/${entry.id}`)}
+              class:list={{ active: entry.id === activeId }}
+              aria-current={entry.id === activeId ? "page" : undefined}
+            >{entry.data.title}</a>
+          ))}
+          {sectionEntries.length === 0 && <span class="knowledge-tree__empty">暂无文章</span>}
+        </div>
+      </div>
+    );
+  })}
+</aside>
+
+<style>
+  .knowledge-tree { position: sticky; top: 6rem; align-self: start; max-height: calc(100vh - 8rem); overflow: auto; padding-right: 1rem; font-size: .9rem; }
+  .knowledge-tree__label { margin: 0 0 1rem; color: var(--text-color-70); font: 700 .7rem/1.2 "JetBrains Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+  .knowledge-tree__home, .knowledge-tree__section-link { display: block; font-weight: 700; }
+  .knowledge-tree__home { padding: .5rem .65rem; background: var(--surface-color); border-radius: .45rem; }
+  .knowledge-tree__section { margin-top: 1.25rem; }
+  .knowledge-tree__section-link { color: var(--text-color); margin-bottom: .35rem; }
+  .knowledge-tree__section-link:hover, .knowledge-tree__entries a:hover { color: var(--link-color); }
+  .knowledge-tree__entries { display: flex; flex-direction: column; gap: .12rem; border-left: 1px solid var(--button-border-color); margin-left: .3rem; padding-left: .75rem; }
+  .knowledge-tree__entries a { color: var(--text-color-70); padding: .28rem .35rem; border-radius: .3rem; }
+  .knowledge-tree__entries a.active { color: var(--link-color); background: var(--button-hover-color); font-weight: 700; }
+  .knowledge-tree__empty { color: var(--text-color-70); font-size: .82rem; }
+  @media (max-width: 1023px) { .knowledge-tree { display: none; } }
+</style>

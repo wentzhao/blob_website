@@ -1,0 +1,28 @@
+---
+import type { MarkdownHeading } from "astro";
+import { siteConfig } from "@/config";
+
+interface Props { headings: MarkdownHeading[]; }
+const { headings } = Astro.props;
+const items = headings.filter((heading) => heading.depth > 1 && heading.depth < (siteConfig.toc.depth + 2));
+---
+
+{items.length > 0 && (
+  <aside class="on-this-page" aria-label="本页目录">
+    <p>本页目录</p>
+    <nav>
+      {items.map((heading) => (
+        <a href={`#${heading.slug}`} style={`--depth: ${heading.depth - 2}`}>{heading.text}</a>
+      ))}
+    </nav>
+  </aside>
+)}
+
+<style>
+  .on-this-page { position: sticky; top: 6rem; align-self: start; max-height: calc(100vh - 8rem); overflow: auto; padding-left: 1rem; border-left: 1px solid var(--button-border-color); }
+  .on-this-page p { margin: 0 0 .8rem; color: var(--text-color-70); font: 700 .7rem/1.2 "JetBrains Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+  .on-this-page nav { display: flex; flex-direction: column; gap: .4rem; }
+  .on-this-page a { color: var(--text-color-70); padding-left: calc(var(--depth) * .75rem); font-size: .8rem; line-height: 1.4; }
+  .on-this-page a:hover { color: var(--link-color); }
+  @media (max-width: 1099px) { .on-this-page { display: none; } }
+</style>
