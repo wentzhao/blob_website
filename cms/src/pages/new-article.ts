@@ -4,14 +4,14 @@ import { el, encodePath } from '../dom'
 import { toast } from '../ui'
 
 // 新建文章弹窗（列表页 / 概览页共用）
-export function openNewModal(root: HTMLElement, categories: string[]) {
+export function openNewModal(root: HTMLElement, _categories: string[]) {
   const langSelect = el('select', { class: 'input' }, [
     el('option', { value: 'zh-cn' }, ['zh-cn']),
     el('option', { value: 'en' }, ['en']),
   ])
-  const catList = el('datalist', { id: 'cms-cat-list' })
-  for (const c of categories) catList.append(el('option', { value: c }))
-  const catInput = el('input', { class: 'input', placeholder: '分类（可选）', list: 'cms-cat-list' })
+  const directorySelect = el('select', { class: 'input' }, [
+    el('option', { value: '' }, ['选择目录（必填）']),
+  ])
   const pathInput = el('input', {
     class: 'input',
     placeholder: '如 my-post 或 category/my-post',
@@ -26,7 +26,7 @@ export function openNewModal(root: HTMLElement, categories: string[]) {
       el('h2', { class: 'modal-title' }, ['新建文章']),
       el('label', { class: 'modal-field' }, ['文章路径（可含多级目录）', pathInput, generatedHint]),
       el('label', { class: 'modal-field' }, ['语言', langSelect]),
-      el('label', { class: 'modal-field' }, ['分类', catInput, catList]),
+      el('label', { class: 'modal-field' }, ['目录', directorySelect]),
       el('div', { class: 'modal-actions' }, [
         el('button', { class: 'btn', onclick: () => overlay.remove() }, ['取消']),
         el('button', { class: 'btn btn-primary', id: 'modal-submit', onclick: submit }, ['创建']),
@@ -35,6 +35,11 @@ export function openNewModal(root: HTMLElement, categories: string[]) {
   ])
   root.append(overlay)
   pathInput.focus()
+  api.meta().then((meta) => {
+    for (const directory of meta.directories) {
+      directorySelect.append(el('option', { value: directory.id }, [`${'　'.repeat(directory.depth)}${directory.label}`]))
+    }
+  }).catch((e) => toast((e as Error).message, 'error'))
 
   async function submit() {
     // 路径留空时自动生成 yyyy/yyyy-mm-dd（按年份分目录，日期为文件名）
@@ -42,14 +47,9 @@ export function openNewModal(root: HTMLElement, categories: string[]) {
     if (!path) path = autoPath()
     const lang = langSelect.value
     try {
-      const res = await api.create({ path, lang })
-      const cat = catInput.value.trim()
-      if (cat) {
-        const detail = await api.get(res.path)
-        const f = detail.files[lang]
-        f.data.category = cat
-        await api.save(res.path, lang, { data: f.data, body: f.content })
-      }
+      const directory = directorySelect.value
+      if (!directory) throw new Error('请选择目录')
+      const res = await api.create({ path, lang, directory })
       toast(`已创建 ${res.path}`)
       overlay.remove()
       navigate(`#/edit/${encodePath(res.path)}`)

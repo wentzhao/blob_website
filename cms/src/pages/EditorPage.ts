@@ -63,6 +63,7 @@ function emptyData(path: string, slugId = path): FrontmatterData {
     image: '',
     draft: true,
     slugId,
+    directory: '',
     category: '',
     pinTop: 0,
   }
@@ -198,8 +199,12 @@ function buildShell(root: HTMLElement, state: EditorState) {
             el('input', { class: 'input', id: 'f-pubdate', type: 'date' }),
           ]),
           el('label', { class: 'form-field' }, [
-            '分类',
-            el('input', { class: 'input', id: 'f-category', list: 'cms-editor-cats' }),
+            '目录',
+            el('select', { class: 'input', id: 'f-directory' }, [el('option', { value: '' }, ['未选择目录'])]),
+          ]),
+          el('label', { class: 'form-field' }, [
+            '分类（由目录派生）',
+            el('input', { class: 'input', id: 'f-category', readonly: true }),
           ]),
           el('label', { class: 'form-field' }, [
             'slugId',
@@ -252,12 +257,15 @@ function buildShell(root: HTMLElement, state: EditorState) {
   ])
   root.append(shell)
 
-  // 分类候选
+  // 目录选择与只读分类由统一目录注册表提供。
   api.meta()
     .then((m) => {
-      const dl = el('datalist', { id: 'cms-editor-cats' })
-      for (const c of m.categories) dl.append(el('option', { value: c.name }))
-      root.append(dl)
+      const directory = root.querySelector('#f-directory') as HTMLSelectElement | null
+      if (!directory) return
+      for (const item of m.directories) {
+        directory.append(el('option', { value: item.id }, [`${'　'.repeat(item.depth)}${item.label}`]))
+      }
+      directory.value = state.data.directory || ''
     })
     .catch(() => {})
 
@@ -350,7 +358,7 @@ function bindForm(shell: HTMLElement, state: EditorState) {
   const textInputs: [string, (v: string) => void][] = [
     ['f-title', (v) => { state.data.title = v; markDirty(state) }],
     ['f-pubdate', (v) => { state.data.pubDate = v; markDirty(state) }],
-    ['f-category', (v) => { state.data.category = v; markDirty(state) }],
+    ['f-directory', (v) => { state.data.directory = v; markDirty(state) }],
     ['f-slugid', (v) => { state.data.slugId = v; markDirty(state) }],
     ['f-image', (v) => { state.data.image = v; markDirty(state) }],
     ['f-description', (v) => { state.data.description = v; markDirty(state) }],
@@ -383,6 +391,7 @@ function syncForm(state: EditorState) {
   set('f-title', state.data.title)
   set('f-pubdate', state.data.pubDate)
   set('f-category', state.data.category)
+  set('f-directory', state.data.directory)
   set('f-slugid', state.data.slugId)
   set('f-image', state.data.image)
   set('f-description', state.data.description)
@@ -414,8 +423,12 @@ function switchLang(state: EditorState, lang: string) {
   if (state.dirty && !window.confirm('当前语言版本有未保存的修改，切换将丢弃这些修改，继续？')) return
   state.lang = lang
   const file = state.detail.files[lang]
-  const stableSlugId = Object.values(state.detail.files).find((entry) => entry.data.slugId)?.data.slugId
-  state.data = file ? { ...file.data } : emptyData(state.path, stableSlugId)
+  const sibling = Object.values(state.detail.files).find((entry) => entry.data.slugId)
+  state.data = file ? { ...file.data } : {
+    ...emptyData(state.path, sibling?.data.slugId),
+    directory: sibling?.data.directory || '',
+    category: sibling?.data.category || '',
+  }
   state.body = file ? file.content : ''
   state.snapshot = makeSnapshot(state)
   state.dirty = false

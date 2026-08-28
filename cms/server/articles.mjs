@@ -50,7 +50,7 @@ articles.get('/*', async (c) => {
 articles.post('/', async (c) => {
   const body = await c.req.json().catch(() => null)
   if (!body?.path) return c.json({ error: 'path 不能为空' }, 400)
-  const result = await createArticle(body.path, body.lang || 'zh-cn')
+  const result = await createArticle(body.path, body.lang || 'zh-cn', body.directory)
   if (result.error) return c.json(result, 400)
   return c.json(result)
 })

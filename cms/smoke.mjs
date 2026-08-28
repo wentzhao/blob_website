@@ -107,6 +107,9 @@ console.log('PASS: 点击新建文章，弹窗正常打开（不再抛 list 只�
 // ---------- 3. 填写并创建 ----------
 const inputs = app.querySelectorAll('.modal input')
 inputs[0].value = 'smoke-test-post' // 路径
+const firstDirectory = await waitFor(() => app.querySelectorAll('.modal select')[1]?.options.length > 1, 8000)
+if (!firstDirectory) throw new Error('FAIL: 新建文章目录选项未加载')
+app.querySelectorAll('.modal select')[1].value = 'deep-learning'
 const submitBtn = document.getElementById('modal-submit')
 submitBtn.click()
 
@@ -159,6 +162,9 @@ document.getElementById('btn-new').click()
 await sleep(200)
 const modalInputs = app.querySelectorAll('.modal input')
 modalInputs[0].value = '' // 路径留空
+const secondDirectory = await waitFor(() => app.querySelectorAll('.modal select')[1]?.options.length > 1, 8000)
+if (!secondDirectory) throw new Error('FAIL: 自动路径新建的目录选项未加载')
+app.querySelectorAll('.modal select')[1].value = 'deep-learning'
 document.getElementById('modal-submit').click()
 const autoPath = await waitFor(() => {
   const m = location.hash.match(/^#\/edit\/(\d{4})\/(\d{4}-\d{2}-\d{2})$/)

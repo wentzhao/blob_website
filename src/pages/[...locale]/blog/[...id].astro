@@ -18,6 +18,7 @@ import { Icon } from "astro-icon/components";
 import { blogCoverUrl, getRelativeLocaleUrl } from "@utils/url-utils";
 import { formatFullDate } from "@utils/time";
 import { getBlogEntrySort } from "@utils/content-utils";
+import { getArticleTreeContext, getContentTree } from "@utils/content-tree";
 
 const currentLang = Astro.currentLocale || i18n!.defaultLocale;
 const t = i18nit(currentLang);
@@ -26,20 +27,28 @@ export async function getStaticPaths() {
   const paths = [];
   for (const locale of i18n!.locales) {
     const localeCode = typeof locale === "string" ? locale : locale.path;
+    await getContentTree(localeCode);
     const entries = await getBlogEntrySort(localeCode);
     for (let index = 0; index < entries.length; index += 1) {
       paths.push({
         params: { locale: localeCode === i18n!.defaultLocale ? undefined : localeCode, id: entries[index].id },
-        props: { entry: entries[index], prev: entries[index + 1] || null, next: entries[index - 1] || null },
+        props: {
+          entry: entries[index],
+          prev: entries[index + 1] || null,
+          next: entries[index - 1] || null,
+          treeContext: await getArticleTreeContext(localeCode, entries[index].id),
+        },
       });
     }
   }
   return paths;
 }
 
-const { entry, prev, next } = Astro.props;
+const { entry, prev, next, treeContext } = Astro.props;
+if (!treeContext) throw new Error(`Missing content tree context for article ${entry.id}`);
 const { Content, headings, remarkPluginFrontmatter } = await render(entry);
-const allEntries = await getBlogEntrySort(currentLang);
+const tree = await getContentTree(currentLang);
+const allEntries = [...tree.articleById.values()];
 const pageTitle = `${entry.data.title} - ${siteConfig.title}`;
 const image = blogCoverUrl(entry.data.image, entry.id);
 ---

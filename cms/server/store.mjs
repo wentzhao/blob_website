@@ -9,6 +9,63 @@ import { fileURLToPath } from 'node:url'
 export const BLOG_DIR = fileURLToPath(new URL('../../src/content/blog/', import.meta.url))
 
 export const LANGS = ['zh-cn', 'en']
+const DIRECTORY_FILE = fileURLToPath(new URL('../../src/content/directory-tree.json', import.meta.url))
+let directoryDefinitionsPromise
+
+async function getDirectoryDefinitions() {
+  if (!directoryDefinitionsPromise) {
+    directoryDefinitionsPromise = readFile(DIRECTORY_FILE, 'utf-8').then((raw) => {
+      const definitions = JSON.parse(raw)
+      const byId = new Map()
+      for (const definition of definitions) {
+        if (!definition.id || byId.has(definition.id)) throw new Error(`目录配置包含重复 ID: ${definition.id}`)
+        if (!definition.labels?.['zh-cn'] || !definition.labels?.en) throw new Error(`目录 ${definition.id} 缺少双语标签`)
+        if (!definition.descriptions?.['zh-cn'] || !definition.descriptions?.en) throw new Error(`目录 ${definition.id} 缺少双语说明`)
+        byId.set(definition.id, definition)
+      }
+      for (const definition of definitions) {
+        if (definition.parentId === definition.id) throw new Error(`目录 ${definition.id} 不能引用自身`)
+        if (definition.parentId && !byId.has(definition.parentId)) throw new Error(`目录 ${definition.id} 的父目录不存在: ${definition.parentId}`)
+        if (!definition.parentId && !definition.category) throw new Error(`根目录 ${definition.id} 缺少 category`)
+        if (definition.parentId && definition.category) throw new Error(`只有根目录可以声明 category: ${definition.id}`)
+        const seen = new Set([definition.id])
+        let current = definition
+        while (current.parentId) {
+          if (seen.has(current.parentId)) throw new Error(`目录配置存在循环: ${current.parentId}`)
+          seen.add(current.parentId)
+          current = byId.get(current.parentId)
+        }
+      }
+      return { definitions, byId }
+    })
+  }
+  return directoryDefinitionsPromise
+}
+
+async function categoryForDirectory(directory) {
+  const { byId } = await getDirectoryDefinitions()
+  let current = byId.get(directory)
+  while (current?.parentId) current = byId.get(current.parentId)
+  return current?.category || null
+}
+
+export async function directoryMeta(locale = 'zh-cn') {
+  const { definitions, byId } = await getDirectoryDefinitions()
+  return definitions.map((definition) => {
+    let depth = 0
+    let current = definition
+    while (current.parentId) {
+      depth++
+      current = byId.get(current.parentId)
+    }
+    return {
+      id: definition.id,
+      parentId: definition.parentId || null,
+      depth,
+      label: definition.labels[locale] || definition.labels['zh-cn'],
+    }
+  })
+}
 
 // 校验相对路径（防止目录穿越）
 export function safeRel(rel) {
@@ -88,6 +145,21 @@ async function slugIdState(rel) {
   return { slugId: ids.values().next().value || null, inconsistent: ids.size > 1 }
 }
 
+async function directoryState(rel) {
+  const directories = new Set()
+  let files = 0
+  for (const lang of LANGS) {
+    try {
+      const { data } = matter(await readFile(join(blogPath(rel), `${lang}.md`), 'utf-8'))
+      files++
+      if (data.directory) directories.add(String(data.directory))
+    } catch {
+      /* 该语言版本不存在 */
+    }
+  }
+  return { directory: directories.values().next().value || null, inconsistent: directories.size > 1, files }
+}
+
 // 扫描所有文章（按文件夹分组，每个文件夹 = 一篇逻辑文章的多语言版本）
 export async function scanArticles() {
   const byPath = new Map()
@@ -160,6 +232,25 @@ export async function saveArticle(path, lang, payload) {
   if (slugState.inconsistent) return { error: '同一文章目录存在不一致的 slugId，请先人工处理' }
   const stableSlugId = slugState.slugId || (data.slugId ? String(data.slugId) : randomUUID())
   data.slugId = stableSlugId
+  const existingDirectory = await directoryState(rel)
+  if (existingDirectory.inconsistent) return { error: '同一文章目录存在不一致的 directory，请先人工处理' }
+  const hasRequestedDirectory = typeof data.directory === 'string'
+  const requestedDirectory = hasRequestedDirectory ? data.directory.trim() : ''
+  const existingDirectoryId = existingDirectory.directory || ''
+  if (existingDirectory.files === 2 && hasRequestedDirectory && requestedDirectory !== existingDirectoryId) {
+    return { error: '已有中英文版本的文章不能在 CMS 中修改 directory，请使用受控迁移操作' }
+  }
+  const directory = hasRequestedDirectory ? requestedDirectory : existingDirectory.directory
+  if (!directory && !data.draft) return { error: '公开文章必须提供有效 directory' }
+  if (directory) {
+    const category = await categoryForDirectory(directory)
+    if (!category) return { error: `未知 directory ID: ${directory}` }
+    data.directory = directory
+    data.category = category
+  } else {
+    data.directory = ''
+    data.category = ''
+  }
 
   const writeOne = async (p, l, d, body) => {
     const file = join(blogPath(p), `${l}.md`)
@@ -173,7 +264,7 @@ export async function saveArticle(path, lang, payload) {
 }
 
 // 新建文章（创建文件夹 + 模板文件）
-export async function createArticle(path, lang) {
+export async function createArticle(path, lang, requestedDirectory) {
   const rel = safeRel(path)
   if (!rel) return { error: '无效路径' }
   if (!LANGS.includes(lang)) return { error: `不支持的语言: ${lang}` }
@@ -184,6 +275,15 @@ export async function createArticle(path, lang) {
   const dir = blogPath(rel)
   const exists = await stat(join(dir, `${lang}.md`)).then(() => true).catch(() => false)
   if (exists) return { error: '文章已存在' }
+  const existingDirectory = await directoryState(rel)
+  if (existingDirectory.inconsistent) return { error: '同一文章目录存在不一致的 directory，请先人工处理' }
+  if (existingDirectory.directory && requestedDirectory && requestedDirectory !== existingDirectory.directory) {
+    return { error: `译文必须继承兄弟文件的 directory: ${existingDirectory.directory}` }
+  }
+  const directory = existingDirectory.directory || requestedDirectory
+  if (!directory) return { error: '首次创建文章必须选择有效 directory' }
+  const category = await categoryForDirectory(directory)
+  if (!category) return { error: `未知 directory ID: ${directory}` }
 
   const data = normalizeData({
     title: rel.split('/').pop(),
@@ -192,7 +292,8 @@ export async function createArticle(path, lang) {
     image: '',
     draft: true,
     slugId: slugState.slugId || randomUUID(),
-    category: '',
+    directory,
+    category,
     pinTop: 0,
   })
   await mkdir(dir, { recursive: true })

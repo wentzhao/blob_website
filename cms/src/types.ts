@@ -6,6 +6,7 @@ export interface FrontmatterData {
   image: string
   draft: boolean
   slugId: string
+  directory: string
   category: string
   pinTop: number
   [key: string]: unknown
@@ -31,6 +32,7 @@ export interface MetaInfo {
   total: number
   drafts: number
   categories: { name: string; count: number }[]
+  directories: { id: string; parentId: string | null; depth: number; label: string }[]
 }
 
 export interface Stats {

@@ -6,12 +6,19 @@ import { randomUUID } from 'crypto';
 // 获取命令行参数
 const args = process.argv.slice(2);
 if (args.length < 1) {
-    console.error('Usage: node newpost.js <path> [lang] (default lang is zh-cn)');
+    console.error('Usage: node newpost.js <path> <directory> [lang]; translations inherit directory from their sibling');
     process.exit(1);
 }
 
 const folderPath = args[0];
-const lang = args[1] || 'zh-cn'; // 如果没有提供语言参数，默认使用 zh-cn
+const remainingArgs = args.slice(1);
+const possibleLang = remainingArgs.at(-1);
+const lang = ['en', 'zh-cn'].includes(possibleLang) ? remainingArgs.pop() : 'zh-cn';
+const requestedDirectory = remainingArgs[0];
+if (remainingArgs.length > 1) {
+    console.error('Usage: node newpost.js <path> <directory> [lang]');
+    process.exit(1);
+}
 
 // 确保语言参数有效
 const validLangs = ['en', 'zh-cn'];
@@ -24,6 +31,16 @@ if (!validLangs.includes(lang)) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const basePath = join(__dirname, '..', 'src', 'content', 'blog');
+const directoryDefinitionPath = join(__dirname, '..', 'src', 'content', 'directory-tree.json');
+
+const directoryDefinitions = await readFile(directoryDefinitionPath, 'utf8').then(JSON.parse);
+const directoryById = new Map(directoryDefinitions.map((definition) => [definition.id, definition]));
+
+function categoryForDirectory(directory) {
+    let definition = directoryById.get(directory);
+    while (definition?.parentId) definition = directoryById.get(definition.parentId);
+    return definition?.category || null;
+}
 
 function isWithin(base, target) {
     const relativePath = relative(base, target);
@@ -91,6 +108,33 @@ if (existingFile) {
     process.exit(0);
 }
 
+const otherLang = lang === 'zh-cn' ? 'en' : 'zh-cn';
+const siblingFrontmatter = await readFile(join(fullPath, `${otherLang}.md`), 'utf8')
+    .then((content) => ({
+        slugId: content.match(/^slugId:\s*(?:"([^"]+)"|'([^']+)'|([^\r\n#]+))/m),
+        directory: content.match(/^directory:\s*(?:"([^"]+)"|'([^']+)'|([^\r\n#]+))/m),
+    }))
+    .then((matches) => ({
+        slugId: matches.slugId ? (matches.slugId[1] || matches.slugId[2] || matches.slugId[3]).trim() : null,
+        directory: matches.directory ? (matches.directory[1] || matches.directory[2] || matches.directory[3]).trim() : null,
+    }))
+    .catch(() => ({ slugId: null, directory: null }));
+
+const directory = siblingFrontmatter.directory || requestedDirectory;
+if (!directory) {
+    console.error('首次创建文章必须提供有效 directory ID');
+    process.exit(1);
+}
+if (!directoryById.has(directory)) {
+    console.error(`未知 directory ID: ${directory}`);
+    process.exit(1);
+}
+if (siblingFrontmatter.directory && requestedDirectory && requestedDirectory !== siblingFrontmatter.directory) {
+    console.error(`译文必须继承兄弟文件的 directory: ${siblingFrontmatter.directory}`);
+    process.exit(1);
+}
+const category = categoryForDirectory(directory);
+
 // 创建文件夹（如果不存在）
 try {
     await mkdir(fullPath, { recursive: true });
@@ -106,20 +150,15 @@ if (!realFullPath || !isWithin(await realpath(resolvedBasePath), realFullPath)) 
     process.exit(1);
 }
 
-const otherLang = lang === 'zh-cn' ? 'en' : 'zh-cn';
-const siblingSlugId = await readFile(join(fullPath, `${otherLang}.md`), 'utf8')
-    .then((content) => content.match(/^slugId:\s*(?:"([^"]+)"|'([^']+)'|([^\r\n#]+))/m))
-    .then((match) => match ? (match[1] || match[2] || match[3]).trim() : null)
-    .catch(() => null);
-
 // 默认的 Markdown 内容
 const defaultContent = `---
 title: new post
 pubDate: ${new Date().toISOString().split('T')[0]}
 description: Some description here
 image: ""
-slugId: ${siblingSlugId || randomUUID()}
-category: ""
+slugId: ${siblingFrontmatter.slugId || randomUUID()}
+directory: ${directory}
+category: ${category}
 draft: false
 pinTop: 0
 ---

@@ -2,7 +2,8 @@
 title: 从一篇笔记开始
 pubDate: 2026-08-28
 description: 这是一个用于验证知识库式博客体验的示例文章。
-category: 技术笔记
+directory: deep-learning
+category: 深度学习
 image: ""
 draft: false
 slugId: getting-started

@@ -25,7 +25,7 @@ pnpm preview
 
 ## 写作
 
-文章放在 `src/content/blog/`，文件夹层级可以表达主题目录。每篇文章至少需要以下 frontmatter：
+文章放在 `src/content/blog/`；文件夹只决定文章路由 ID，主题目录由显式的 `directory` ID 决定。每篇公开文章至少需要以下 frontmatter：
 
 ```yaml
 title: 文章标题
@@ -33,14 +33,15 @@ pubDate: 2026-08-28
 description: 一句话摘要
 image: ""
 slugId: stable-id
-category: 技术笔记
+directory: deep-learning/paper-reading/transformer
+category: 深度学习
 draft: false
 pinTop: 0
 ```
 
-`script/newpost.js` 会生成上述字段，其中 `slugId` 是独立稳定的外部标识，文章目录移动时不会自动改写；已有文章的 `slugId` 不迁移。`category` 可以为空，但不能添加 schema 未定义的字段。CMS 与脚手架在同一文章目录下复用同一个中英文共享 `slugId`，CMS 保存不会因标识变化移动文章目录。
+首次创建文章使用 `pnpm newpost -- <文章路径> <directory> [zh-cn|en]`，例如 `pnpm newpost -- deep-learning/transformer-notes deep-learning/paper-reading/transformer`。创建同目录译文时会继承兄弟文件的 `directory`、派生的 `category` 和共享 `slugId`。`slugId` 是独立稳定的外部标识，文章目录移动时不会自动改写；已有文章的 `slugId` 不迁移。作者只编辑 `directory`，`category` 由其根目录派生；草稿可暂时没有目录，但公开文章缺少、使用未知目录或译文目录不一致都会使构建失败。
 
-顶级分类和目录说明集中在 `src/content/navigation.ts`。children 目前是说明性内容，不是二级筛选链接。公开列表、详情路由、RSS 和 Pagefind 在所有环境都会过滤 `draft: true` 的文章。
+目录注册表集中在 `src/content/directory-tree.json`，`src/content/navigation.ts` 负责校验并投影顶级导航。公开列表、详情路由、RSS 和 Pagefind 在所有环境都会过滤 `draft: true` 的文章；英文缺失时的回退和目录树的可用语言状态也只基于公开版本。
 
 支持中文和英文文章：在同一个文章目录下分别创建 `zh-cn.md` 与 `en.md`，文件夹路径决定文章路由 ID。没有英文版本时，英文路由会回退到中文内容并显示提示；只有英文版本的文章不会出现在默认中文列表中。
 
