@@ -1,11 +1,9 @@
 import { i18n } from "astro:config/client";
 
-// Import translation files for different locales
 import zhCN from "./language/zh-cn.ts";
-import en from "./language/en.ts";
 
 // Translation object mapping locale codes to their respective translation data
-const translations = { "zh-cn": zhCN, en };
+const translations = { "zh-cn": zhCN };
 
 /**
  * Create an internationalization function for a specific language

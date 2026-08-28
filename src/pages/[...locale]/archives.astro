@@ -13,7 +13,7 @@ const currentLang = Astro.currentLocale || i18n!.defaultLocale;
 const t = i18nit(currentLang);
 
 export async function getStaticPaths() {
-	return i18n?.locales.map(locale => ({ params: { locale: locale == i18n?.defaultLocale ? undefined : (locale as string) } }));
+	return [{ params: { locale: undefined } }];
 }
 
 // 获取所有博客文章并按发布日期降序排序
@@ -22,7 +22,7 @@ const allBlogPosts = await getBlogEntrySort(currentLang);
 const pageTitle = t("header.archive") + " - " + siteConfig.title;
 ---
 
-<MainPageLayout title={pageTitle} lang={currentLang}>
+<MainPageLayout title={pageTitle} lang={currentLang} pagefindIgnore>
     <ArchivePanel
         client:only="svelte"
         sortedPosts={allBlogPosts}

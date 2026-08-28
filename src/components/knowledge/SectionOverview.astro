@@ -14,7 +14,7 @@ const { section, entries, lang } = Astro.props;
 const sectionEntries = entries
   .filter((entry) => entry.data.category === section.label)
   .slice(0, 3);
-const sectionPath = getRelativeLocaleUrl(lang, section.path);
+const sectionPath = getRelativeLocaleUrl(lang, section.directoryPath);
 ---
 
 <section class="knowledge-section" id={section.id}>
@@ -30,13 +30,13 @@ const sectionPath = getRelativeLocaleUrl(lang, section.path);
   <div class="knowledge-section__body">
     <div class="directory-list">
       {section.children.map((child) => (
-        <div class="directory-item">
+        <a class="directory-item" href={getRelativeLocaleUrl(lang, `/knowledge/${child.id}/`)}>
           <span class="directory-item__icon" aria-hidden="true">⌁</span>
           <span>
             <strong>{child.label}</strong>
             <small>{child.description}</small>
           </span>
-        </div>
+        </a>
       ))}
     </div>
 

@@ -12,7 +12,6 @@ const translations = {
   error: t("search.error"),
   noresult: t("search.noresult")
 };
-const defaultLocale = i18n!.defaultLocale;
 const pagefindScriptUrl = baseUrl("/pagefind/pagefind.js");
 
 ---
@@ -92,7 +91,7 @@ const pagefindScriptUrl = baseUrl("/pagefind/pagefind.js");
   }
 </style>
 
-<script is:inline define:vars={{ translations, currentLang, defaultLocale, pagefindScriptUrl, isProduction: import.meta.env.PROD }}>
+<script is:inline define:vars={{ translations, pagefindScriptUrl, isProduction: import.meta.env.PROD }}>
 (() => {
   const state = window.__noteSearchState || (window.__noteSearchState = {
     pagefindPromise: null,
@@ -131,18 +130,10 @@ const pagefindScriptUrl = baseUrl("/pagefind/pagefind.js");
     return state.pagefindPromise;
   };
 
-  const localeFromPath = (pathname) => {
-    const normalized = pathname.replace(/^\/+/, '');
-    return normalized.startsWith('en/') || normalized === 'en' ? 'en' : defaultLocale;
-  };
-
-  const activeLocale = () => document.documentElement.lang || currentLang;
-
   const safeResultUrl = (rawUrl) => {
     try {
       const url = new URL(rawUrl, window.location.origin);
       if (url.origin !== window.location.origin || (url.protocol !== 'http:' && url.protocol !== 'https:')) return null;
-      if (localeFromPath(url.pathname) !== activeLocale()) return null;
       return `${url.pathname}${url.search}${url.hash}`;
     } catch {
       return null;

@@ -13,15 +13,13 @@ const t = i18nit(currentLang);
 const entries = await getBlogEntrySort(currentLang);
 
 export function getStaticPaths() {
-  return i18n!.locales.map((locale) => ({
-    params: { locale: locale === i18n!.defaultLocale ? undefined : locale },
-  }));
+  return [{ params: { locale: undefined } }];
 }
 
 const pageTitle = `${siteConfig.title} - ${siteConfig.subTitle}`;
 ---
 
-<MainPageLayout title={pageTitle} lang={currentLang} description="一个以知识库方式组织的个人博客。">
+<MainPageLayout title={pageTitle} lang={currentLang} description="一个以知识库方式组织的个人博客。" pagefindIgnore>
   <div class="page-shell home-page">
     <section class="home-intro">
       <p class="eyebrow">A quiet place to think</p>

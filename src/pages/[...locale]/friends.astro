@@ -11,7 +11,7 @@ import { render } from 'astro:content'
 import { i18n } from "astro:config/client";
 
 export async function getStaticPaths() {
-	return i18n?.locales.map(locale => ({ params: { locale: locale == i18n?.defaultLocale ? undefined : (locale as string) } }));
+	return [{ params: { locale: undefined } }];
 }
 
 const currentLang = Astro.currentLocale || i18n!.defaultLocale;
@@ -26,7 +26,7 @@ const { Content } = await render(friendsPost);
 const pageTitle = t("header.friends") + " - " + siteConfig.title;
 ---
 
-<MainPageLayout title={pageTitle} lang={currentLang}>
+<MainPageLayout title={pageTitle} lang={currentLang} pagefindIgnore>
     <div class="mx-auto w-full max-w-[var(--page-width)]">
         <Cover title={t("cover.title.friends")} subTitle={t("cover.subTitle.friends")} />
         
@@ -65,7 +65,7 @@ const pageTitle = t("header.friends") + " - " + siteConfig.title;
                 ))
             }
         </div>
-        <Markdown class="mb-6 markdown-content onload-animation">
+        <Markdown class="mb-6 markdown-content onload-animation" pagefindBody={false}>
             <Content />
         </Markdown>
     </div>

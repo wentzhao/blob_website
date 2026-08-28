@@ -19,7 +19,7 @@ const { entries, activeId, lang } = Astro.props;
     const sectionEntries = entries.filter((entry) => entry.data.category === section.label);
     return (
       <div class="knowledge-tree__section">
-        <a class="knowledge-tree__section-link" href={getRelativeLocaleUrl(lang, section.path)}>{section.label}</a>
+        <a class="knowledge-tree__section-link" href={getRelativeLocaleUrl(lang, section.directoryPath)}>{section.label}</a>
         <div class="knowledge-tree__entries">
           {sectionEntries.map((entry) => (
             <a

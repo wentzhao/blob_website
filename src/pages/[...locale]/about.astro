@@ -12,7 +12,7 @@ import { render } from 'astro:content'
 import { i18n } from "astro:config/client";
 
 export async function getStaticPaths() {
-	return i18n?.locales.map(locale => ({ params: { locale: locale == i18n?.defaultLocale ? undefined : (locale as string) } }));
+	return [{ params: { locale: undefined } }];
 }
 
 
@@ -27,10 +27,10 @@ const { Content } = await render(aboutPost);
 
 const pageTitle = t("header.about") + " - " + siteConfig.title;
 ---
-<MainPageLayout title={pageTitle} lang={currentLang}>
+<MainPageLayout title={pageTitle} lang={currentLang} pagefindIgnore>
     <div class="mx-auto w-full max-w-[var(--page-width)]">
         <Cover title={t("cover.title.about")} subTitle={t("cover.subTitle.about")}/>
-        <Markdown class="mb-6 markdown-content onload-animation">
+        <Markdown class="mb-6 markdown-content onload-animation" pagefindBody={false}>
             <Content />
         </Markdown>
     </div>

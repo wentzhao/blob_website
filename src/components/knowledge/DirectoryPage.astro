@@ -1,0 +1,149 @@
+---
+import type { DirectoryTreeContext } from "@utils/content-tree";
+import { getRelativeLocaleUrl } from "@utils/url-utils";
+import { formatFullDate, formatMonthDay } from "@utils/time";
+import i18nit from "@i18n/translation";
+
+interface Props {
+  context: DirectoryTreeContext;
+  lang: "zh-cn";
+}
+
+const { context, lang } = Astro.props;
+const t = i18nit(lang);
+const { directory, childDirectories, summary } = context;
+const directoryUrl = (id: string) => getRelativeLocaleUrl(lang, `/knowledge/${id}/`);
+const articleUrl = (id: string) => getRelativeLocaleUrl(lang, `/blog/${id}/`);
+---
+
+<div class="directory-page page-shell" data-pagefind-ignore>
+  <nav class="directory-breadcrumbs" aria-label="目录路径">
+    <a href={getRelativeLocaleUrl(lang, "/")}>{t("directory.home")}</a>
+    {context.path.map((node, index) => (
+      <>
+        <span aria-hidden="true">/</span>
+        {index === context.path.length - 1 ? (
+          <span aria-current="page">{node.label}</span>
+        ) : (
+          <a href={directoryUrl(node.id)}>{node.label}</a>
+        )}
+      </>
+    ))}
+  </nav>
+
+  <header class="directory-header">
+    <p class="eyebrow">{directory.id}</p>
+    <h1>{directory.label}</h1>
+    <p class="directory-description">{directory.description}</p>
+  </header>
+
+  <section class="directory-stats" aria-label="目录统计">
+    <div>
+      <strong>{summary.articleCount}</strong>
+      <span>{t("directory.articles")}</span>
+    </div>
+    <div>
+      <strong>{childDirectories.length}</strong>
+      <span>{t("directory.subdirectories")}</span>
+    </div>
+    <div>
+      <strong>{summary.lastUpdated ? formatFullDate(summary.lastUpdated, lang) : t("directory.noUpdates")}</strong>
+      <span>{t("directory.lastUpdated")}</span>
+    </div>
+  </section>
+
+  {childDirectories.length > 0 && (
+    <section class="directory-section" aria-labelledby="subdirectories-heading">
+      <div class="section-heading">
+        <h2 id="subdirectories-heading">{t("directory.subdirectories")}</h2>
+        <span>{childDirectories.length}</span>
+      </div>
+      <div class="subdirectory-grid">
+        {childDirectories.map((child) => (
+          <a class="subdirectory-card" href={directoryUrl(child.id)}>
+            <strong>{child.label}</strong>
+            <span>{child.description}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="directory-section" aria-labelledby="recent-heading">
+    <div class="section-heading">
+      <h2 id="recent-heading">{t("directory.recentUpdates")}</h2>
+      <span>{summary.recentArticles.length}</span>
+    </div>
+    {summary.recentArticles.length > 0 ? (
+      <div class="article-list article-list--recent">
+        {summary.recentArticles.map((article) => (
+          <a class="article-row" href={articleUrl(article.id)}>
+            <span>{article.data.title}</span>
+            <time datetime={article.data.pubDate.toISOString()}>{formatMonthDay(article.data.pubDate, lang)}</time>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="empty-state">{t("directory.noArticles")}</p>
+    )}
+  </section>
+
+  <section class="directory-section" aria-labelledby="all-articles-heading">
+    <div class="section-heading">
+      <h2 id="all-articles-heading">{t("directory.allArticles")}</h2>
+      <span>{summary.articleCount}</span>
+    </div>
+    {summary.allArticles.length > 0 ? (
+      <div class="article-list">
+        {summary.allArticles.map((article) => (
+          <a class="article-card" href={articleUrl(article.id)}>
+            <div>
+              <h3>{article.data.title}</h3>
+              {article.data.description && <p>{article.data.description}</p>}
+            </div>
+            <time datetime={article.data.pubDate.toISOString()}>{formatFullDate(article.data.pubDate, lang)}</time>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="empty-state">{t("directory.noArticles")}</p>
+    )}
+  </section>
+</div>
+
+<style>
+  .directory-page { padding-top: 5rem; padding-bottom: 6rem; }
+  .directory-breadcrumbs { display: flex; flex-wrap: wrap; gap: .45rem; color: var(--text-color-70); font-size: .82rem; }
+  .directory-breadcrumbs a:hover { color: var(--link-color); }
+  .directory-header { max-width: 760px; padding: 3.5rem 0 3rem; }
+  .eyebrow { margin: 0 0 .75rem; color: var(--accent-color); font: 700 .72rem/1.2 "JetBrains Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+  .directory-header h1 { margin: 0; font-size: clamp(2.25rem, 6vw, 4rem); line-height: 1.1; letter-spacing: -.055em; }
+  .directory-description { margin: 1rem 0 0; color: var(--text-color-70); font-size: 1.05rem; line-height: 1.8; }
+  .directory-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-bottom: 4rem; border: 1px solid var(--button-border-color); background: var(--button-border-color); }
+  .directory-stats div { display: flex; flex-direction: column; gap: .35rem; padding: 1.25rem; background: var(--bg-color); }
+  .directory-stats strong { font-size: 1.15rem; }
+  .directory-stats span { color: var(--text-color-70); font-size: .8rem; }
+  .directory-section { padding: 2.5rem 0 0; }
+  .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--button-border-color); padding-bottom: .7rem; }
+  .section-heading h2 { margin: 0; font-size: 1.3rem; }
+  .section-heading > span { color: var(--text-color-70); font-size: .8rem; }
+  .subdirectory-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; }
+  .subdirectory-card { display: flex; flex-direction: column; gap: .35rem; padding: 1rem; border: 1px solid var(--button-border-color); border-radius: .5rem; transition: background .2s ease, border-color .2s ease; }
+  .subdirectory-card:hover, .article-card:hover, .article-row:hover { border-color: var(--link-color); background: var(--button-hover-color); }
+  .subdirectory-card span, .article-card p { color: var(--text-color-70); font-size: .86rem; line-height: 1.55; }
+  .article-list { display: flex; flex-direction: column; }
+  .article-row, .article-card { border-bottom: 1px solid var(--button-border-color); transition: background .2s ease, border-color .2s ease; }
+  .article-row { display: flex; justify-content: space-between; gap: 1rem; padding: .85rem .5rem; }
+  .article-row time, .article-card time { flex: none; color: var(--text-color-70); font-size: .8rem; }
+  .article-card { display: flex; justify-content: space-between; gap: 1.5rem; padding: 1rem .5rem; }
+  .article-card h3 { margin: 0; font-size: 1rem; }
+  .article-card p { margin: .35rem 0 0; }
+  .empty-state { margin: 0; padding: 1rem; color: var(--text-color-70); border: 1px dashed var(--button-border-color); }
+  @media (max-width: 640px) {
+    .directory-page { padding-top: 3rem; padding-bottom: 4rem; }
+    .directory-header { padding: 2.5rem 0 2rem; }
+    .directory-stats { grid-template-columns: 1fr; margin-bottom: 2.5rem; }
+    .article-card { display: block; }
+    .article-card time { display: block; margin-top: .6rem; }
+  }
+</style>

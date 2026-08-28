@@ -14,10 +14,12 @@ export type NavigationSection = {
   label: string;
   description: string;
   path: string;
+  directoryPath: string;
   children: NavigationChild[];
 };
 
 export function validateDirectoryDefinitions(input: DirectoryDefinition[]) {
+  // English labels remain required for registry completeness, but are not rendered by the Chinese-only public site.
   const byId = new Map<string, DirectoryDefinition>();
   for (const definition of input) {
     if (!definition.id || byId.has(definition.id)) throw new Error(`Duplicate directory id: ${definition.id}`);
@@ -69,6 +71,7 @@ export const topSections: NavigationSection[] = directoryDefinitions
       label: text.label,
       description: text.description,
       path: `/archives/?category=${encodeURIComponent(definition.category!)}`,
+      directoryPath: `/knowledge/${definition.id}/`,
       children: directoryDefinitions
         .filter((child) => child.parentId === definition.id)
         .map((child) => ({ id: child.id, ...getDirectoryText(child, "zh-cn") })),

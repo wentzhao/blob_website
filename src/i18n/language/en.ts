@@ -55,6 +55,16 @@ const translation: Translation = {
         minutes: "min read",
         uncategorized: "Uncategorized"
     },
+    directory: {
+        home: "Home",
+        articles: "articles",
+        lastUpdated: "Last updated",
+        recentUpdates: "Recent updates",
+        subdirectories: "Subdirectories",
+        allArticles: "All articles",
+        noArticles: "No public articles",
+        noUpdates: "No updates",
+    },
     comments: {
         name: "Name",
         email: "Email",

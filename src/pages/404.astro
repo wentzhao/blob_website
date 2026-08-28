@@ -17,7 +17,7 @@ console.log("404 page loaded with locale:", currentLang);
 const pageTitle = "404 - " + siteConfig.title;
 const indexPage = getRelativeLocaleUrl(currentLang, "/");
 ---
-<MainPageLayout title={pageTitle} lang="zh-CN">
+<MainPageLayout title={pageTitle} lang="zh-cn" pagefindIgnore>
     <div class="mx-auto w-full max-w-[var(--page-width)] px-4 text-center">
         <Cover title={t("page404.title")} subTitle={t("page404.subTitle")} />
         

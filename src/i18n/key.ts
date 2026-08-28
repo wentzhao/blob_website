@@ -52,7 +52,17 @@ export interface Translation {
         words: string;
         minutes: string;
         uncategorized: string;
-    }
+    };
+    directory: {
+        home: string;
+        articles: string;
+        lastUpdated: string;
+        recentUpdates: string;
+        subdirectories: string;
+        allArticles: string;
+        noArticles: string;
+        noUpdates: string;
+    };
     comments: {
         name: string;
         email: string;

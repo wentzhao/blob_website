@@ -55,6 +55,16 @@ const translation: Translation = {
         minutes: "分钟",
         uncategorized: "未分类"
     },
+    directory: {
+        home: "首页",
+        articles: "篇文章",
+        lastUpdated: "最后更新",
+        recentUpdates: "最近更新",
+        subdirectories: "子目录",
+        allArticles: "全部文章",
+        noArticles: "暂无公开文章",
+        noUpdates: "暂无更新",
+    },
     comments: {
         name: "昵称",
         email: "邮箱",

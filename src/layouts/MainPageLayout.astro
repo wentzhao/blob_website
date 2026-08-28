@@ -9,13 +9,14 @@ interface Props {
   title: string;
   lang: string;
   description?: string;
+  pagefindIgnore?: boolean;
 }
-const { title, lang, description } = Astro.props;
+const { title, lang, description, pagefindIgnore = false } = Astro.props;
 
 ---
 
 <Layout title={title} lang={lang} description={description}>
-  <div class="site-shell flex flex-col min-h-screen">
+  <div class="site-shell flex flex-col min-h-screen" data-pagefind-ignore={pagefindIgnore ? "" : undefined}>
     <Header />
     <main class="site-main flex-grow">
       <slot />

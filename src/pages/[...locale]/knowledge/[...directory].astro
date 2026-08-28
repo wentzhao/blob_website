@@ -1,0 +1,31 @@
+---
+import MainPageLayout from "@layouts/MainPageLayout.astro";
+import DirectoryPage from "@components/knowledge/DirectoryPage.astro";
+import { directoryDefinitions } from "@/content/navigation";
+import { getContentTree, getDirectoryTreeContext } from "@utils/content-tree";
+import { i18n } from "astro:config/client";
+import { siteConfig } from "@/config";
+
+export async function getStaticPaths() {
+  const localeCode = i18n!.defaultLocale;
+  await getContentTree(localeCode);
+  const paths = [];
+  for (const definition of directoryDefinitions) {
+    const context = await getDirectoryTreeContext(localeCode, definition.id);
+    if (!context) throw new Error(`Missing content tree context for directory ${definition.id}`);
+    paths.push({
+      params: { locale: undefined, directory: definition.id },
+      props: { context },
+    });
+  }
+  return paths;
+}
+
+const { context } = Astro.props;
+if (!context) throw new Error(`Missing content tree context for directory ${Astro.params.directory}`);
+const pageTitle = `${context.directory.label} - ${siteConfig.title}`;
+---
+
+<MainPageLayout title={pageTitle} lang="zh-cn" description={context.directory.description} pagefindIgnore>
+  <DirectoryPage context={context} lang="zh-cn" />
+</MainPageLayout>

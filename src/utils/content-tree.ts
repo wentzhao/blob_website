@@ -37,6 +37,14 @@ export type DirectoryTreeContext = {
   readonly path: readonly DirectoryNode[];
   readonly childDirectories: readonly DirectoryNode[];
   readonly articles: readonly ArticleTreeArticle[];
+  readonly summary: DirectorySummary;
+};
+
+export type DirectorySummary = {
+  readonly allArticles: readonly ArticleTreeArticle[];
+  readonly articleCount: number;
+  readonly recentArticles: readonly ArticleTreeArticle[];
+  readonly lastUpdated?: Date;
 };
 
 export type ArticleTreeContext = {
@@ -108,6 +116,38 @@ function immutableArticleData(data: BlogEntryWithLocaleStatus["data"]) {
   };
   Object.freeze(snapshot.pubDate);
   return Object.freeze(snapshot);
+}
+
+function collectSubtreeArticles(directory: DirectoryNode, articles: ArticleTreeArticle[]) {
+  articles.push(...directory.articles);
+  for (const child of directory.directories) {
+    collectSubtreeArticles(child, articles);
+  }
+}
+
+function compareArticleDateDescending(a: ArticleTreeArticle, b: ArticleTreeArticle) {
+  return (b.data.pubDate.valueOf() - a.data.pubDate.valueOf()) || a.id.localeCompare(b.id);
+}
+
+function compareArticleDisplayOrder(a: ArticleTreeArticle, b: ArticleTreeArticle) {
+  return (b.data.pinTop - a.data.pinTop) || compareArticleDateDescending(a, b);
+}
+
+function getDirectorySummary(directory: DirectoryNode): DirectorySummary {
+  const subtreeArticles: ArticleTreeArticle[] = [];
+  collectSubtreeArticles(directory, subtreeArticles);
+  const allArticles = [...subtreeArticles].sort(compareArticleDisplayOrder);
+  const recentArticles = [...subtreeArticles].sort(compareArticleDateDescending).slice(0, 5);
+  const lastUpdated = subtreeArticles.length > 0
+    ? new Date(Math.max(...subtreeArticles.map((article) => article.data.pubDate.valueOf())))
+    : undefined;
+
+  return Object.freeze({
+    allArticles: freezeArray(allArticles),
+    articleCount: allArticles.length,
+    recentArticles: freezeArray(recentArticles),
+    ...(lastUpdated ? { lastUpdated: new ImmutableDate(lastUpdated.valueOf()) } : {}),
+  });
 }
 
 function directoryAncestors(id: string) {
@@ -250,5 +290,6 @@ export async function getDirectoryTreeContext(locale: string, directoryId: Direc
     path: freezeArray([...ancestors, directory]),
     childDirectories: directory.directories,
     articles: directory.articles,
+    summary: getDirectorySummary(directory),
   });
 }

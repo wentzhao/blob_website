@@ -39,7 +39,7 @@ function getLanguage(entry: CollectionEntry<"blog">) {
 /** The build-process cache for public logical articles. All list and tree queries use this snapshot. */
 export function getPublicBlogEntryGroups() {
   if (!publicGroupsPromise) {
-    publicGroupsPromise = getCollection("blog", (entry) => entry.data.draft !== true).then((entries) => {
+    publicGroupsPromise = getCollection("blog", (entry) => entry.data.draft !== true && getLanguage(entry) === "zh-cn").then((entries) => {
       const grouped = new Map<string, Record<string, CollectionEntry<"blog">>>();
       for (const entry of entries) {
         const id = getRouteId(entry);
