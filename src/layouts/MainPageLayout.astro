@@ -5,7 +5,8 @@ import Footer from '@components/Footer.astro';
 import Search from '@components/misc/Search.astro';
 import KnowledgeTree from '@components/knowledge/KnowledgeTree.astro';
 import type { ArticleTreeContext, DirectoryTreeContext } from '@utils/content-tree';
-import { getContentTree } from '@utils/content-tree';
+import { getContentTree, getMegaMenuSections } from '@utils/content-tree';
+import { topSections } from '@/content/navigation';
 
 
 interface Props {
@@ -17,12 +18,13 @@ interface Props {
 }
 const { title, lang, description, pagefindIgnore = false, treeContext } = Astro.props;
 const tree = await getContentTree(lang);
+const megaMenuSections = await getMegaMenuSections(lang, topSections.map((section) => section.id));
 
 ---
 
 <Layout title={title} lang={lang} description={description}>
   <div class="site-shell flex flex-col min-h-screen" data-pagefind-ignore={pagefindIgnore ? "" : undefined}>
-    <Header />
+    <Header lang={lang} megaMenuSections={megaMenuSections} />
     <main class="site-main flex-grow">
       <div class="site-sidebar">
         <KnowledgeTree roots={tree.roots} treeContext={treeContext} lang={lang} />

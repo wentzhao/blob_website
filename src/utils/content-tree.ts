@@ -47,6 +47,26 @@ export type DirectorySummary = {
   readonly lastUpdated?: Date;
 };
 
+export type MegaMenuDirectory = {
+  readonly id: DirectoryId;
+  readonly label: string;
+  readonly description: string;
+};
+
+export type MegaMenuArticle = {
+  readonly id: string;
+  readonly title: string;
+  readonly pubDate: Date;
+};
+
+export type MegaMenuSection = {
+  readonly id: DirectoryId;
+  readonly label: string;
+  readonly description: string;
+  readonly childDirectories: readonly MegaMenuDirectory[];
+  readonly recentArticles: readonly MegaMenuArticle[];
+};
+
 export type ArticleTreeContext = {
   readonly article: ArticleTreeArticle;
   readonly directory: DirectoryNode;
@@ -297,4 +317,40 @@ export async function getDirectoryTreeContext(locale: string, directoryId: Direc
     articles: directory.articles,
     summary: getDirectorySummary(directory),
   });
+}
+
+/** Returns the narrow, static view model used by the Header's desktop mega menu. */
+export async function getMegaMenuSections(locale: string, rootIds: readonly DirectoryId[]): Promise<readonly MegaMenuSection[]> {
+  const tree = await getContentTree(locale);
+  const sections = rootIds.map((rootId) => {
+    const directory = tree.directoryById.get(rootId);
+    if (!directory) {
+      throw new Error(`Mega menu root directory ${rootId} is missing for locale ${locale}`);
+    }
+
+    const subtreeArticles: ArticleTreeArticle[] = [];
+    collectSubtreeArticles(directory, subtreeArticles);
+    const recentArticles = [...subtreeArticles]
+      .sort(compareArticleDateDescending)
+      .slice(0, 5)
+      .map((article) => Object.freeze({
+        id: article.id,
+        title: article.data.title,
+        pubDate: article.data.pubDate,
+      }));
+
+    return Object.freeze({
+      id: directory.id,
+      label: directory.label,
+      description: directory.description,
+      childDirectories: freezeArray(directory.directories.map((child) => Object.freeze({
+        id: child.id,
+        label: child.label,
+        description: child.description,
+      }))),
+      recentArticles: freezeArray(recentArticles),
+    });
+  });
+
+  return freezeArray(sections);
 }

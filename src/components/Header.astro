@@ -1,18 +1,35 @@
 ---
 import { Icon } from "astro-icon/components";
-import { i18n } from "astro:config/client";
 import i18nit from "@i18n/translation";
 import { topSections } from "@/content/navigation";
+import type { MegaMenuSection } from "@utils/content-tree";
 import { baseUrl, getRelativeLocaleUrl } from "@utils/url-utils";
+import { formatBlogMonthDay } from "@utils/time";
 import ThemeIcon from "./control/ThemeIcon.astro";
 
-const currentLang = Astro.currentLocale || i18n!.defaultLocale;
+interface Props {
+  lang: string;
+  megaMenuSections: readonly MegaMenuSection[];
+}
+
+const { lang: currentLang, megaMenuSections } = Astro.props;
 const t = i18nit(currentLang);
 const indexPage = getRelativeLocaleUrl(currentLang, "/");
 const archivePage = getRelativeLocaleUrl(currentLang, "/archives/");
 const aboutPage = getRelativeLocaleUrl(currentLang, "/about/");
 const rssPage = baseUrl("/rss.xml");
 const brandName = "wentZh";
+const megaMenuById = new Map(megaMenuSections.map((section) => [section.id, section]));
+
+function getMegaMenuSection(id: string) {
+  const section = megaMenuById.get(id);
+  if (!section) throw new Error(`Missing mega menu data for directory ${id}`);
+  return section;
+}
+
+function getMenuId(id: string) {
+  return id.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
 ---
 
 <header id="main-header" class="site-header">
@@ -25,7 +42,78 @@ const brandName = "wentZh";
     <nav class="site-nav" aria-label="主导航">
       <a href={indexPage}>{t("header.home")}</a>
       <a href={archivePage}>{t("header.archive")}</a>
-      {topSections.slice(0, 3).map((section) => <a href={getRelativeLocaleUrl(currentLang, section.directoryPath)}>{section.label}</a>)}
+      {topSections.map((section) => {
+        const menuSection = getMegaMenuSection(section.id);
+        const menuId = getMenuId(section.id);
+        const triggerId = `mega-menu-trigger-${menuId}`;
+        const panelId = `mega-menu-panel-${menuId}`;
+        return (
+          <div class="site-nav__category" data-mega-menu-region={section.id}>
+            <a
+              id={triggerId}
+              class="site-nav__category-trigger"
+              href={getRelativeLocaleUrl(currentLang, section.directoryPath)}
+              data-mega-menu-trigger={section.id}
+              aria-controls={panelId}
+              aria-expanded="false"
+            >
+              {section.label}
+            </a>
+            <section
+              id={panelId}
+              class="mega-menu-panel"
+              data-mega-menu-panel={section.id}
+              aria-labelledby={triggerId}
+              aria-hidden="true"
+              hidden
+              data-pagefind-ignore
+            >
+              <div class="mega-menu-panel__inner">
+                <div class="mega-menu-panel__overview">
+                  <span class="mega-menu-panel__eyebrow">分区概览</span>
+                  <h2>{menuSection.label}</h2>
+                  <p>{menuSection.description}</p>
+                  <a class="mega-menu-panel__all-link" href={getRelativeLocaleUrl(currentLang, section.directoryPath)}>
+                    查看全部内容 <span aria-hidden="true">→</span>
+                  </a>
+                </div>
+
+                <div class="mega-menu-panel__column">
+                  <span class="mega-menu-panel__eyebrow">目录架构</span>
+                  {menuSection.childDirectories.length > 0 ? (
+                    <ul class="mega-menu-panel__list">
+                      {menuSection.childDirectories.map((directory) => (
+                        <li>
+                          <a href={getRelativeLocaleUrl(currentLang, `/knowledge/${directory.id}/`)}>
+                            <strong>{directory.label}</strong>
+                            <small>{directory.description}</small>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p class="mega-menu-panel__empty">暂无直属目录</p>}
+                </div>
+
+                <div class="mega-menu-panel__column">
+                  <span class="mega-menu-panel__eyebrow">最近发布</span>
+                  {menuSection.recentArticles.length > 0 ? (
+                    <ul class="mega-menu-panel__list mega-menu-panel__recent-list">
+                      {menuSection.recentArticles.map((article) => (
+                        <li>
+                          <a href={getRelativeLocaleUrl(currentLang, `/blog/${article.id}/`)}>
+                            <strong>{article.title}</strong>
+                            <time datetime={article.pubDate.toISOString()}>{formatBlogMonthDay(article.pubDate, currentLang)}</time>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p class="mega-menu-panel__empty">暂无公开文章</p>}
+                </div>
+              </div>
+            </section>
+          </div>
+        );
+      })}
       <a href={aboutPage}>{t("header.about")}</a>
     </nav>
 
@@ -62,19 +150,46 @@ const brandName = "wentZh";
   </div>
 </header>
 
+<div class="mega-menu-backdrop" data-mega-menu-backdrop aria-hidden="true" data-pagefind-ignore></div>
+
 <style>
-  .site-header { position: sticky; top: 0; z-index: 50; border-top: 14px solid var(--accent-color); background: var(--bg-color); }
-  .site-header__inner { position: relative; width: 100%; min-height: 5rem; padding-inline: clamp(1rem, 2vw, 2rem); margin: auto; display: flex; align-items: center; box-sizing: border-box; }
-  .site-brand { display: inline-flex; align-items: center; gap: .45rem; font-size: 1.05rem; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+  .site-header { --desktop-header-height: 3.25rem; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid color-mix(in srgb, var(--button-border-color) 70%, transparent); background: color-mix(in srgb, var(--bg-color) 94%, transparent); box-shadow: 0 1px 0 var(--shadow-color); backdrop-filter: blur(24px) saturate(.92); -webkit-backdrop-filter: blur(24px) saturate(.92); font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .site-header__inner { position: relative; width: 100%; min-height: 3.25rem; padding-inline: clamp(1rem, 2vw, 2rem); margin: auto; display: flex; align-items: center; box-sizing: border-box; }
+  .site-brand { display: inline-flex; align-items: center; gap: .45rem; font-size: clamp(1rem, .92rem + .34vw, 1.16rem); font-weight: 800; letter-spacing: -.035em; white-space: nowrap; }
   .site-brand:hover { color: var(--link-color); }
-  .site-brand__mark { color: var(--accent-color); font: 700 1.5rem/1 "JetBrains Mono", monospace; }
-  .site-nav { position: absolute; left: 50%; display: flex; align-items: center; gap: 1.55rem; transform: translateX(-50%); color: var(--text-color-70); font-size: .72rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+  .site-brand__mark { color: var(--accent-color); font: 700 1.2rem/1 "JetBrains Mono", monospace; }
+  .site-nav { position: absolute; inset-inline: 0; display: flex; align-items: center; justify-content: center; gap: clamp(1.1rem, 1.8vw, 2.25rem); pointer-events: none; color: var(--text-color-70); font-size: .94rem; font-weight: 500; letter-spacing: -.012em; line-height: 1; }
   .site-nav a:hover { color: var(--link-color); }
+  .site-nav > a, .site-nav__category { pointer-events: auto; }
+  .site-nav__category { display: inline-flex; align-items: center; }
+  .site-nav__category-trigger[aria-expanded="true"] { color: var(--link-color); }
+  .mega-menu-backdrop { position: fixed; inset-inline: 0; top: 3.25rem; bottom: 0; z-index: 49; background: color-mix(in srgb, var(--bg-color) 62%, transparent); backdrop-filter: blur(24px) saturate(.72); -webkit-backdrop-filter: blur(24px) saturate(.72); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms ease, visibility 180ms ease; }
+  .mega-menu-backdrop[aria-hidden="false"] { opacity: 1; visibility: visible; pointer-events: auto; }
+  .mega-menu-panel { position: fixed; inset-inline: 0; top: var(--desktop-header-height); z-index: 60; max-height: calc(100vh - var(--desktop-header-height)); overflow-y: auto; border-block: 1px solid color-mix(in srgb, var(--button-border-color) 70%, transparent); background: color-mix(in srgb, var(--bg-color) 98%, transparent); box-shadow: 0 2rem 5rem -3rem var(--shadow-color); backdrop-filter: blur(24px) saturate(.94); -webkit-backdrop-filter: blur(24px) saturate(.94); opacity: 0; visibility: hidden; transform: translateY(-12px); pointer-events: none; transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease; }
+  .mega-menu-panel[hidden] { display: none; }
+  .mega-menu-panel:not([hidden]) { opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto; animation: mega-menu-panel-in 180ms ease both; }
+  .mega-menu-panel__inner { width: min(88rem, calc(100vw - clamp(3rem, 6vw, 8rem))); margin-inline: auto; padding: clamp(2.85rem, 5vw, 4.2rem) 0 clamp(3.6rem, 5.8vw, 5.2rem); display: grid; grid-template-columns: minmax(17rem, 1.22fr) minmax(13.5rem, .92fr) minmax(15rem, .92fr); gap: clamp(2rem, 3vw, 4rem); align-items: start; }
+  .mega-menu-panel__overview { padding-right: .35rem; }
+  .mega-menu-panel__eyebrow { display: block; margin: 0 0 1.25rem; color: var(--text-color-70); font-size: .85rem; font-weight: 500; letter-spacing: .015em; }
+  .mega-menu-panel h2 { margin: 0; font-size: clamp(2.6rem, 3.8vw, 4.4rem); font-weight: 650; line-height: .98; letter-spacing: -.055em; }
+  .mega-menu-panel p { margin: 1.4rem 0 0; max-width: 28rem; color: var(--text-color-70); font-size: 1.04rem; line-height: 1.68; }
+  .mega-menu-panel__all-link { display: inline-flex; gap: .45rem; margin-top: 1.25rem; color: var(--link-color); font-size: .9rem; font-weight: 600; }
+  .mega-menu-panel__column { min-width: 0; padding-block: .35rem .5rem; }
+  .mega-menu-panel__list { display: grid; gap: 1.1rem; padding: 0; margin: 0; list-style: none; }
+  .mega-menu-panel__list a { display: grid; gap: .24rem; padding: .18rem 0; color: var(--text-color); transition: opacity 180ms ease, color 180ms ease; }
+  .mega-menu-panel__list a:hover, .mega-menu-panel__list a:focus-visible, .mega-menu-panel__all-link:hover, .mega-menu-panel__all-link:focus-visible { color: var(--link-color); opacity: .72; }
+  .mega-menu-panel__list strong { font-size: 1.05rem; font-weight: 620; line-height: 1.32; letter-spacing: -.018em; }
+  .mega-menu-panel__list small, .mega-menu-panel__list time { color: var(--text-color-70); font-size: .9rem; font-weight: 400; line-height: 1.55; }
+  .mega-menu-panel__recent-list { gap: 1.1rem; }
+  .mega-menu-panel__recent-list a { grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 1.2rem; }
+  .mega-menu-panel__recent-list time { white-space: nowrap; }
+  .mega-menu-panel__empty { margin: 0 !important; font-size: .9rem !important; }
   .site-tools { margin-left: auto; display: flex; align-items: center; gap: .45rem; }
-  .icon-button { width: 2.25rem; height: 2.25rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: .35rem; color: var(--text-color-70); background: transparent; cursor: pointer; }
+  .icon-button { width: 2.5rem; height: 2.5rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid color-mix(in srgb, var(--button-border-color) 70%, transparent); border-radius: 999px; color: var(--text-color-70); background: color-mix(in srgb, var(--bg-color) 94%, transparent); cursor: pointer; }
   .icon-button:hover { color: var(--link-color); background: var(--button-hover-color); }
   .mobile-only { display: none; }
-  @media (max-width: 1023px) { .site-header { border-top-width: 8px; } .site-header__inner { width: min(var(--content-width), calc(100vw - 1.5rem)); min-height: 4.25rem; padding-inline: 0; } .site-nav { display: none; } .mobile-only { display: inline-flex; } }
+  @media (max-width: 1199px) { .site-nav { gap: .9rem; font-size: .82rem; } .mega-menu-panel__inner { grid-template-columns: minmax(11rem, 1fr) minmax(11rem, 1fr) minmax(15rem, 1.2fr); gap: 1.25rem; } }
+  @media (max-width: 1023px) { .site-header__inner { width: min(var(--content-width), calc(100vw - 1.5rem)); min-height: 3.25rem; padding-inline: 0; } .site-nav { display: none; } .mega-menu-backdrop, .mega-menu-panel { display: none !important; } .mobile-only { display: inline-flex; } }
   .mobile-menu { position: fixed; inset: 0; z-index: 100; }
   .mobile-menu__overlay { position: absolute; inset: 0; background: rgb(0 0 0 / .35); }
   .mobile-menu__drawer { position: absolute; right: 0; top: 0; bottom: 0; width: min(88vw, 22rem); display: flex; flex-direction: column; gap: .25rem; padding: 1.25rem; overflow: auto; background: var(--bg-color); box-shadow: -12px 0 30px var(--shadow-color); }
@@ -82,24 +197,177 @@ const brandName = "wentZh";
   .mobile-menu__drawer > a { display: flex; flex-direction: column; gap: .18rem; padding: .7rem .75rem; border-radius: .45rem; color: var(--text-color); }
   .mobile-menu__drawer > a:hover { background: var(--button-hover-color); color: var(--link-color); }
   .mobile-menu__drawer small { color: var(--text-color-70); font-size: .75rem; line-height: 1.45; }
+  @keyframes mega-menu-panel-in { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .mega-menu-backdrop, .mega-menu-panel { animation: none; transition: none; } }
 </style>
 
 <script>
+  let activeHeaderController: AbortController | null = null;
+
   function initHeader() {
+    const header = document.getElementById("main-header");
     const container = document.getElementById("mobile-menu-container");
     const openButton = document.getElementById("mobile-menu-button");
     const closeButton = document.getElementById("mobile-menu-close");
     const overlay = document.getElementById("mobile-menu-overlay");
-    if (!container || !openButton || openButton.dataset.bound === "true") return;
-    openButton.dataset.bound = "true";
+    if (!header || !container || !openButton || header.dataset.bound === "true") return;
+    const megaMenuBackdrop = document.querySelector<HTMLElement>("[data-mega-menu-backdrop]");
 
-    const closeMenu = () => { container.classList.add("hidden"); document.body.style.overflow = ""; openButton.setAttribute("aria-expanded", "false"); };
-    openButton.addEventListener("click", () => { container.classList.remove("hidden"); document.body.style.overflow = "hidden"; openButton.setAttribute("aria-expanded", "true"); });
-    closeButton?.addEventListener("click", closeMenu);
-    overlay?.addEventListener("click", closeMenu);
-    container.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
-    document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMenu(); });
+    activeHeaderController?.abort();
+    const controller = new AbortController();
+    const { signal } = controller;
+    activeHeaderController = controller;
+    header.dataset.bound = "true";
+
+    const closeMenu = () => {
+      container.classList.add("hidden");
+      document.body.style.overflow = "";
+      openButton.setAttribute("aria-expanded", "false");
+    };
+
+    const menuQuery = window.matchMedia("(min-width: 1024px)");
+    const regions = Array.from(header.querySelectorAll<HTMLElement>("[data-mega-menu-region]"));
+    const triggers = new Map(regions.map((region) => [region.dataset.megaMenuRegion!, region.querySelector<HTMLElement>("[data-mega-menu-trigger]")!]));
+    const panels = new Map(regions.map((region) => [region.dataset.megaMenuRegion!, region.querySelector<HTMLElement>("[data-mega-menu-panel]")!]));
+    let activeSectionId: string | null = null;
+    let closeTimer: number | undefined;
+    let isClosing = false;
+
+    const isMegaMenuTarget = (target: EventTarget | null) =>
+      target instanceof Node && regions.some((region) => region.contains(target));
+
+    const clearCloseTimer = () => {
+      if (closeTimer !== undefined) window.clearTimeout(closeTimer);
+      closeTimer = undefined;
+    };
+
+    const closeMegaMenu = (restoreFocus = true) => {
+      clearCloseTimer();
+      isClosing = true;
+      try {
+        const activeElement = document.activeElement;
+        if (restoreFocus && activeSectionId && panels.get(activeSectionId)?.contains(activeElement)) {
+          triggers.get(activeSectionId)?.focus({ preventScroll: true });
+        }
+        for (const [sectionId, panel] of panels) {
+          panel.hidden = true;
+          panel.setAttribute("aria-hidden", "true");
+          triggers.get(sectionId)?.setAttribute("aria-expanded", "false");
+        }
+        activeSectionId = null;
+        delete header.dataset.megaMenuOpen;
+        megaMenuBackdrop?.setAttribute("aria-hidden", "true");
+      } finally {
+        isClosing = false;
+      }
+    };
+
+    const scheduleMegaMenuClose = (keepWhileFocused = true) => {
+      clearCloseTimer();
+      closeTimer = window.setTimeout(() => {
+        closeTimer = undefined;
+        if (!keepWhileFocused || !isMegaMenuTarget(document.activeElement)) closeMegaMenu();
+      }, 160);
+    };
+
+    const openMegaMenu = (sectionId: string) => {
+      if (isClosing || !menuQuery.matches) return;
+      const targetPanel = panels.get(sectionId);
+      const targetTrigger = triggers.get(sectionId);
+      if (!targetPanel || !targetTrigger) return;
+      clearCloseTimer();
+
+      const activeElement = document.activeElement;
+      for (const [currentId, panel] of panels) {
+        if (currentId === sectionId) continue;
+        if (panel.contains(activeElement)) targetTrigger.focus({ preventScroll: true });
+        panel.hidden = true;
+        panel.setAttribute("aria-hidden", "true");
+        triggers.get(currentId)?.setAttribute("aria-expanded", "false");
+      }
+
+      targetPanel.hidden = false;
+      targetPanel.setAttribute("aria-hidden", "false");
+      targetTrigger.setAttribute("aria-expanded", "true");
+      activeSectionId = sectionId;
+      header.dataset.megaMenuOpen = sectionId;
+      megaMenuBackdrop?.setAttribute("aria-hidden", "false");
+    };
+
+    const handleViewportChange = () => {
+      const activeElement = document.activeElement;
+      const siteNav = header.querySelector<HTMLElement>(".site-nav");
+      const focusInDesktopNavigation = activeElement instanceof Node && Boolean(siteNav?.contains(activeElement));
+
+      if (!menuQuery.matches) {
+        closeMegaMenu(false);
+        if (focusInDesktopNavigation) {
+          if (getComputedStyle(openButton).display !== "none") {
+            openButton.focus({ preventScroll: true });
+          } else {
+            header.querySelector<HTMLElement>(".site-brand")?.focus({ preventScroll: true });
+          }
+        }
+        return;
+      }
+
+      const focusInMobileMenu = activeElement instanceof Node && container.contains(activeElement);
+      closeMenu();
+      if (focusInMobileMenu) header.querySelector<HTMLElement>(".site-brand")?.focus({ preventScroll: true });
+    };
+
+    openButton.addEventListener("click", () => {
+      container.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+      openButton.setAttribute("aria-expanded", "true");
+    }, { signal });
+    closeButton?.addEventListener("click", closeMenu, { signal });
+    overlay?.addEventListener("click", closeMenu, { signal });
+    container.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu, { signal }));
+
+    for (const region of regions) {
+      const sectionId = region.dataset.megaMenuRegion!;
+      region.addEventListener("pointerenter", () => openMegaMenu(sectionId), { signal });
+      region.addEventListener("pointerleave", (event) => {
+        if (!(event.relatedTarget instanceof Node) || !region.contains(event.relatedTarget)) scheduleMegaMenuClose(false);
+      }, { signal });
+      region.addEventListener("focusin", () => openMegaMenu(sectionId), { signal });
+      region.addEventListener("focusout", (event) => {
+        if (!(event.relatedTarget instanceof Node) || !region.contains(event.relatedTarget)) scheduleMegaMenuClose();
+      }, { signal });
+    }
+
+    header.addEventListener("focusin", (event) => {
+      if (!isMegaMenuTarget(event.target)) closeMegaMenu();
+    }, { signal });
+    document.addEventListener("pointerdown", (event) => {
+      if (event.target instanceof Node && megaMenuBackdrop?.contains(event.target)) {
+        closeMegaMenu();
+        return;
+      }
+      if (!(event.target instanceof Node) || !header.contains(event.target)) closeMegaMenu();
+    }, { signal });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      const megaMenuOpen = activeSectionId !== null;
+      const mobileMenuOpen = !container.classList.contains("hidden");
+      if (megaMenuOpen) closeMegaMenu();
+      if (mobileMenuOpen) closeMenu();
+      if (megaMenuOpen || mobileMenuOpen) event.preventDefault();
+    }, { signal });
+
+    menuQuery.addEventListener("change", handleViewportChange);
+    signal.addEventListener("abort", () => menuQuery.removeEventListener("change", handleViewportChange), { once: true });
+    signal.addEventListener("abort", () => {
+      clearCloseTimer();
+      closeMegaMenu(false);
+      closeMenu();
+      delete header.dataset.bound;
+      if (activeHeaderController === controller) activeHeaderController = null;
+    }, { once: true });
   }
+
+  document.addEventListener("astro:before-swap", () => activeHeaderController?.abort());
   document.addEventListener("DOMContentLoaded", initHeader);
   document.addEventListener("astro:page-load", initHeader);
 </script>
