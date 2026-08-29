@@ -15,7 +15,7 @@ import { i18n } from "astro:config/client";
 import i18nit from "@i18n/translation";
 import { Icon } from "astro-icon/components";
 import { blogCoverUrl, getRelativeLocaleUrl } from "@utils/url-utils";
-import { formatFullDate } from "@utils/time";
+import { formatBlogDate } from "@utils/time";
 import { getBlogEntrySort } from "@utils/content-utils";
 import { getArticleTreeContext, getContentTree } from "@utils/content-tree";
 
@@ -69,7 +69,8 @@ const image = blogCoverUrl(entry.data.image, entry.id);
         <h1>{entry.data.title}</h1>
         {entry.data.description && <p class="article-description">{entry.data.description}</p>}
         <div class="article-meta">
-          <span><Icon name="fa6-solid:calendar-days" /> {formatFullDate(entry.data.pubDate, currentLang)}</span>
+          <span><Icon name="fa6-solid:calendar-days" /> {t("article.publishedOn")} {formatBlogDate(entry.data.pubDate, currentLang)}</span>
+          {entry.data.updatedDate && <span><Icon name="fa6-solid:clock" /> {t("article.updatedOn")} {formatBlogDate(entry.data.updatedDate, currentLang)}</span>}
           <span>{remarkPluginFrontmatter.words || 0} {t("pagecard.words")}</span>
           <span>{remarkPluginFrontmatter.minutes || 0} {t("pagecard.minutes")}</span>
           <a href={getRelativeLocaleUrl(currentLang, `/archives/?category=${encodeURIComponent(entry.data.category || "")}`)}>查看分类 →</a>

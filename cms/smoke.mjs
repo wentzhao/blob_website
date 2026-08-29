@@ -1,6 +1,9 @@
 // 冒烟测试：在 jsdom 中真实点击「新建文章」→ 创建 → 编辑 → 实时预览 → 保存 → 删除
 // 覆盖：el() 只读属性（input.list）、空路径自动生成 yyyy/yyyy-mm-dd
 import { JSDOM } from 'jsdom'
+import { writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { BLOG_DIR } from './server/store.mjs'
 
 const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></html>', {
   url: 'http://localhost:5188/',
@@ -63,6 +66,20 @@ async function waitDeleted(path, timeout = 10000) {
     const res = await realFetch('http://localhost:5188/api/articles/' + encodeURI(path))
     return res.status === 404
   }, timeout, 200)
+}
+
+const localDate = (date = new Date()) => {
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+async function apiJson(path, init) {
+  const res = await realFetch('http://localhost:5188' + path, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+  })
+  const data = await res.json().catch(() => ({}))
+  return { res, data }
 }
 
 // ---------- 1. 列表页渲染 ----------
@@ -181,6 +198,94 @@ document.querySelector('.btn-danger').click()
 const autoDeleted = await waitDeleted(autoPathStr)
 if (!autoDeleted) throw new Error('FAIL: 自动生成文章删除未完成: ' + autoPathStr)
 console.log('PASS: 自动生成文章已删除 (' + autoPathStr + ')')
+
+// ---------- 9. updatedDate 服务端往返与非法输入 ----------
+const updatedPath = 'smoke-updated-date-post'
+const today = localDate()
+const yesterday = localDate(new Date(Date.now() - 24 * 60 * 60 * 1000))
+try {
+  let result = await apiJson('/api/articles', {
+    method: 'POST',
+    body: JSON.stringify({ path: updatedPath, lang: 'zh-cn', directory: 'deep-learning' }),
+  })
+  if (!result.res.ok) throw new Error('FAIL: updatedDate 测试文章创建失败: ' + JSON.stringify(result.data))
+
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  if (!result.res.ok) throw new Error('FAIL: updatedDate 测试文章读取失败')
+  let zhFile = result.data.files['zh-cn']
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath) + '/zh-cn', {
+    method: 'PUT',
+    body: JSON.stringify({ data: zhFile.data, body: zhFile.content }),
+  })
+  if (!result.res.ok) throw new Error('FAIL: 空初始保存失败: ' + JSON.stringify(result.data))
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  if (result.data.files['zh-cn'].data.updatedDate) throw new Error('FAIL: 空初始保存错误生成 updatedDate')
+
+  zhFile = result.data.files['zh-cn']
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath) + '/zh-cn', {
+    method: 'PUT',
+    body: JSON.stringify({ data: zhFile.data, body: '# 第一次变化' }),
+  })
+  if (!result.res.ok) throw new Error('FAIL: 正文变更保存失败: ' + JSON.stringify(result.data))
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  zhFile = result.data.files['zh-cn']
+  if (zhFile.data.updatedDate !== today) throw new Error('FAIL: 正文变更未写入当天 updatedDate')
+
+  const overriddenData = { ...zhFile.data, pubDate: '2026-01-01', updatedDate: yesterday }
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath) + '/zh-cn', {
+    method: 'PUT',
+    body: JSON.stringify({ data: overriddenData, body: '# 第一次变化' }),
+  })
+  if (!result.res.ok) throw new Error('FAIL: 手动覆盖 updatedDate 失败: ' + JSON.stringify(result.data))
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  zhFile = result.data.files['zh-cn']
+  if (zhFile.data.updatedDate !== yesterday) throw new Error('FAIL: 手动覆盖 updatedDate 未保留')
+
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath) + '/zh-cn', {
+    method: 'PUT',
+    body: JSON.stringify({ data: { ...zhFile.data }, body: '# 第二次变化' }),
+  })
+  if (!result.res.ok) throw new Error('FAIL: 已有 updatedDate 的正文变更保存失败: ' + JSON.stringify(result.data))
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  zhFile = result.data.files['zh-cn']
+  if (zhFile.data.updatedDate !== today) throw new Error('FAIL: 已有 updatedDate 阻止自动更新时间')
+
+  result = await apiJson('/api/articles', {
+    method: 'POST',
+    body: JSON.stringify({ path: updatedPath, lang: 'en' }),
+  })
+  if (!result.res.ok) throw new Error('FAIL: 空语言版本创建失败: ' + JSON.stringify(result.data))
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  const enFile = result.data.files.en
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath) + '/en', {
+    method: 'PUT',
+    body: JSON.stringify({ data: enFile.data, body: enFile.content }),
+  })
+  if (!result.res.ok) throw new Error('FAIL: 空语言版本保存失败: ' + JSON.stringify(result.data))
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  if (result.data.files.en.data.updatedDate) throw new Error('FAIL: 空语言版本错误生成 updatedDate')
+
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath) + '/zh-cn', {
+    method: 'PUT',
+    body: JSON.stringify({ data: { ...zhFile.data, updatedDate: '' }, body: zhFile.content }),
+  })
+  if (!result.res.ok) throw new Error('FAIL: 清空 updatedDate 失败: ' + JSON.stringify(result.data))
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  if (result.data.files['zh-cn'].data.updatedDate) throw new Error('FAIL: 清空 updatedDate 未生效')
+
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath) + '/zh-cn', {
+    method: 'PUT',
+    body: JSON.stringify({ data: { ...result.data.files['zh-cn'].data, updatedDate: '2026-02-30' }, body: zhFile.content }),
+  })
+  if (result.res.status !== 400 || !result.data.error) throw new Error('FAIL: 非法 updatedDate 未被拒绝')
+
+  await writeFile(join(BLOG_DIR, updatedPath, 'zh-cn.md'), '---\ntitle: 非法日期\npubDate: 2026-01-01\nupdatedDate: 2026-02-30\ndraft: true\nslugId: smoke-invalid\ndirectory: deep-learning\ncategory: 深度学习\npinTop: 0\n---\n')
+  result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
+  if (result.res.status !== 422 || !result.data.error) throw new Error('FAIL: 非法 frontmatter 读取未返回明确错误')
+  console.log('PASS: updatedDate 自动更新、空语言、清空/覆盖和非法输入')
+} finally {
+  await apiJson('/api/articles/' + encodeURIComponent(updatedPath), { method: 'DELETE' })
+}
 
 console.log('\n=== 冒烟测试全部通过 ===')
 process.exit(0)

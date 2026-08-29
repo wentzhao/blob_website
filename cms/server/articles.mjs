@@ -41,7 +41,12 @@ articles.get('/', async (c) => {
 // GET /api/articles/<path>
 articles.get('/*', async (c) => {
   const rel = rest(c)
-  const article = await readArticle(rel)
+  let article
+  try {
+    article = await readArticle(rel)
+  } catch (error) {
+    return c.json({ error: error?.message || '文章内容校验失败' }, 422)
+  }
   if (!article) return c.json({ error: '文章不存在' }, 404)
   return c.json(article)
 })

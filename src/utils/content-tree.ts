@@ -1,5 +1,5 @@
 import { directoryById as definitionsById, directoryDefinitions, getDirectoryCategory, getDirectoryText } from "@/content/navigation";
-import { getPublicBlogEntryGroups, selectPublicBlogEntry } from "@utils/content-utils";
+import { getBlogLastUpdated, getPublicBlogEntryGroups, selectPublicBlogEntry } from "@utils/content-utils";
 import type { BlogEntryWithLocaleStatus, LanguageStatus } from "@utils/content-utils";
 
 export type DirectoryId = string;
@@ -113,8 +113,10 @@ function immutableArticleData(data: BlogEntryWithLocaleStatus["data"]) {
   const snapshot = {
     ...data,
     pubDate: new ImmutableDate(data.pubDate.valueOf()),
+    ...(data.updatedDate ? { updatedDate: new ImmutableDate(data.updatedDate.valueOf()) } : {}),
   };
   Object.freeze(snapshot.pubDate);
+  if (snapshot.updatedDate) Object.freeze(snapshot.updatedDate);
   return Object.freeze(snapshot);
 }
 
@@ -139,7 +141,10 @@ function getDirectorySummary(directory: DirectoryNode): DirectorySummary {
   const allArticles = [...subtreeArticles].sort(compareArticleDisplayOrder);
   const recentArticles = [...subtreeArticles].sort(compareArticleDateDescending).slice(0, 5);
   const lastUpdated = subtreeArticles.length > 0
-    ? new Date(Math.max(...subtreeArticles.map((article) => article.data.pubDate.valueOf())))
+    ? (() => {
+        const effective = new Date(Math.max(...subtreeArticles.map((article) => getBlogLastUpdated(article.data).valueOf())));
+        return new Date(Date.UTC(effective.getUTCFullYear(), effective.getUTCMonth(), effective.getUTCDate()));
+      })()
     : undefined;
 
   return Object.freeze({

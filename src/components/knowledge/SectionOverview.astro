@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { getRelativeLocaleUrl } from "@utils/url-utils";
-import { formatMonthDay } from "@utils/time";
+import { formatBlogMonthDay } from "@utils/time";
 import type { NavigationSection } from "@/content/navigation";
 
 interface Props {
@@ -41,11 +41,11 @@ const sectionPath = getRelativeLocaleUrl(lang, section.directoryPath);
     </div>
 
     <div class="recent-list">
-      <p class="recent-list__label">最近更新</p>
+      <p class="recent-list__label">最近发布</p>
       {sectionEntries.length > 0 ? sectionEntries.map((entry) => (
         <a href={getRelativeLocaleUrl(lang, `/blog/${entry.id}`)} class="recent-item">
           <span>{entry.data.title}</span>
-          <time datetime={entry.data.pubDate.toISOString()}>{formatMonthDay(entry.data.pubDate, lang)}</time>
+          <time datetime={entry.data.pubDate.toISOString()}>{formatBlogMonthDay(entry.data.pubDate, lang)}</time>
         </a>
       )) : <p class="muted recent-empty">暂无公开文章</p>}
     </div>

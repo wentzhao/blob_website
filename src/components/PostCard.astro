@@ -6,7 +6,7 @@ import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content'
 
 import { getRelativeLocaleUrl } from '@utils/url-utils';
-import { formatFullDate } from '@/utils/time'
+import { formatBlogDate } from '@/utils/time'
 
 import { siteConfig } from '@/config';
 import { i18n } from "astro:config/client";
@@ -70,7 +70,7 @@ const isBgMode = siteConfig.theme.postCard.imageMode === "background";
         <div class="flex items-center justify-start text-sm text-[var(--text-color-70)] mt-4 space-x-4">
             <p class="pubdate flex items-center whitespace-nowrap">
                 <Icon name="fa6-solid:calendar-days" class="mr-1"></Icon> 
-                <span class="py-1 px-1">{formatFullDate(pubDate, currentLang)}</span>
+                <span class="py-1 px-1">{formatBlogDate(pubDate, currentLang)}</span>
             </p>
         </div>
         <div class="flex flex-wrap items-center justify-start text-sm text-[var(--text-color-70)] mt-2 gap-2">

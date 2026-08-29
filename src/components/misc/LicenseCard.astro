@@ -5,7 +5,7 @@ import { licenseConfig, profileConfig } from '@/config';
 import { Icon } from "astro-icon/components"
 import { i18n } from "astro:config/client";
 import i18nit from "@i18n/translation";
-import { formatFullDate } from '@/utils/time'
+import { formatBlogDate } from '@/utils/time'
 
 interface Props {
     title: string;
@@ -42,7 +42,7 @@ const postAuthor = author ?? profileConfig.name;
         </div>
         <div>
             <div class="transition text-[var(--text-color-70)]">{t("license.publishon")}</div>
-            <div class="transition text-[var(--text-color)] font-bold">{formatFullDate(pubDate, currentLang)}</div>
+            <div class="transition text-[var(--text-color)] font-bold">{formatBlogDate(pubDate, currentLang)}</div>
         </div>
         <div>
             <div class="transition text-[var(--text-color-70)]">{t("license.license")}</div>

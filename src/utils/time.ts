@@ -46,3 +46,35 @@ export function formatFullDate(dateInput: string | Date, lang: string = 'zh-CN')
 
   return lang.startsWith('zh') ? addPanguSpace(formatted) : formatted;
 }
+
+/** Format a blog frontmatter date without allowing the build machine's timezone to shift it. */
+function toBlogDate(dateInput: string | Date): Date {
+  return dateInput instanceof Date
+    ? new Date(Date.UTC(dateInput.getUTCFullYear(), dateInput.getUTCMonth(), dateInput.getUTCDate()))
+    : (() => {
+        const [year, month, day] = dateInput.split('-').map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
+      })();
+}
+
+export function formatBlogDate(dateInput: string | Date, lang: string = 'zh-CN'): string {
+  const date = toBlogDate(dateInput);
+  const formatted = new Intl.DateTimeFormat(normalizeLocale(lang), {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+
+  return lang.startsWith('zh') ? addPanguSpace(formatted) : formatted;
+}
+
+export function formatBlogMonthDay(dateInput: string | Date, lang: string = 'zh-CN'): string {
+  const formatted = new Intl.DateTimeFormat(normalizeLocale(lang), {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(toBlogDate(dateInput));
+
+  return lang.startsWith('zh') ? addPanguSpace(formatted) : formatted;
+}

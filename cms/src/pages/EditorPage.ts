@@ -199,6 +199,10 @@ function buildShell(root: HTMLElement, state: EditorState) {
             el('input', { class: 'input', id: 'f-pubdate', type: 'date' }),
           ]),
           el('label', { class: 'form-field' }, [
+            '最后更新时间（可选）',
+            el('input', { class: 'input', id: 'f-updateddate', type: 'date' }),
+          ]),
+          el('label', { class: 'form-field' }, [
             '目录',
             el('select', { class: 'input', id: 'f-directory' }, [el('option', { value: '' }, ['未选择目录'])]),
           ]),
@@ -358,6 +362,7 @@ function bindForm(shell: HTMLElement, state: EditorState) {
   const textInputs: [string, (v: string) => void][] = [
     ['f-title', (v) => { state.data.title = v; markDirty(state) }],
     ['f-pubdate', (v) => { state.data.pubDate = v; markDirty(state) }],
+    ['f-updateddate', (v) => { state.data.updatedDate = v; markDirty(state) }],
     ['f-directory', (v) => { state.data.directory = v; markDirty(state) }],
     ['f-slugid', (v) => { state.data.slugId = v; markDirty(state) }],
     ['f-image', (v) => { state.data.image = v; markDirty(state) }],
@@ -390,6 +395,7 @@ function syncForm(state: EditorState) {
   }
   set('f-title', state.data.title)
   set('f-pubdate', state.data.pubDate)
+  set('f-updateddate', state.data.updatedDate || '')
   set('f-category', state.data.category)
   set('f-directory', state.data.directory)
   set('f-slugid', state.data.slugId)
@@ -488,7 +494,17 @@ async function doSave(state: EditorState) {
   if (btn) btn.disabled = true
   try {
     const res = await api.save(state.path, state.lang, { data: state.data, body: state.body })
+    const saved = await api.get(res.path)
+    const savedFile = saved.files[state.lang]
+    if (!savedFile) throw new Error('保存后无法读取当前语言版本')
     state.path = res.path
+    state.data = { ...savedFile.data }
+    state.body = savedFile.content
+    state.detail.files[state.lang] = {
+      data: { ...savedFile.data },
+      content: savedFile.content,
+    }
+    syncForm(state)
     state.snapshot = makeSnapshot(state)
     state.dirty = false
     const badge = document.querySelector('#dirty-badge') as HTMLElement | null

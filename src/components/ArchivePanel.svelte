@@ -4,7 +4,7 @@
   import { fade } from 'svelte/transition';
   import Icon from '@iconify/svelte';
   import i18nit from '@i18n/translation';
-  import { formatMonthDay } from '@/utils/time'
+  import { formatBlogMonthDay } from '@/utils/time'
   import { getRelativeLocaleUrl } from '@utils/url-utils';
 
   export let sortedPosts = [];
@@ -27,7 +27,7 @@
 
   // 按年份分组逻辑
   $: postsByYear = filteredPosts.reduce((acc, post) => {
-    const year = new Date(post.data.pubDate).getFullYear();
+    const year = new Date(post.data.pubDate).getUTCFullYear();
     if (!acc[year]) acc[year] = [];
     acc[year].push(post);
     return acc;
@@ -146,7 +146,7 @@
                                 class="flex items-center gap-4 active:bg-[var(--button-hover-color)] hover:bg-[var(--button-hover-color)] p-2 rounded transition-all duration-200 group"
                             >
                                 <span class="text-[var(--text-color-70)] min-w-[80px] md:min-w-[120px]">
-                                    {formatMonthDay(post.data.pubDate, currentLang)}
+                                    {formatBlogMonthDay(post.data.pubDate, currentLang)}
                                 </span>
                                 
                                 <span class="text-lg group-hover:pl-2 group-hover:text-[var(--link-color)] group-hover:font-bold transition-all duration-200 flex-1 group-active:text-[var(--link-color)]">

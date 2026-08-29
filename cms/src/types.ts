@@ -2,6 +2,7 @@
 export interface FrontmatterData {
   title: string
   pubDate: string
+  updatedDate?: string
   description: string
   image: string
   draft: boolean

@@ -7,7 +7,8 @@ import { siteConfig } from "@/config";
 import { i18n } from "astro:config/client";
 import i18nit from "@i18n/translation";
 import { getRelativeLocaleUrl } from "@utils/url-utils";
-import { formatFullDate } from "@utils/time";
+import { formatBlogDate } from "@utils/time";
+import { getBlogLastUpdated } from "@utils/content-utils";
 
 const currentLang = Astro.currentLocale || i18n!.defaultLocale;
 const t = i18nit(currentLang);
@@ -24,14 +25,14 @@ function collectArticles(directory: DirectoryNode): DirectoryNode["articles"][nu
 const categorySummaries = tree.roots.map((root) => {
   const articles = collectArticles(root);
   const lastUpdated = articles.length > 0
-    ? new Date(Math.max(...articles.map((article) => article.data.pubDate.valueOf())))
+    ? new Date(Math.max(...articles.map((article) => getBlogLastUpdated(article.data).valueOf())))
     : undefined;
 
   return { root, articleCount: articles.length, lastUpdated };
 });
 
 const lastUpdated = entries.length > 0
-  ? new Date(Math.max(...entries.map((entry) => entry.data.pubDate.valueOf())))
+  ? new Date(Math.max(...entries.map((entry) => getBlogLastUpdated(entry.data).valueOf())))
   : undefined;
 
 export function getStaticPaths() {
@@ -79,20 +80,20 @@ const pageTitle = `${siteConfig.title} - ${siteConfig.subTitle}`;
         </div>
         <div>
           <span>{t("home.lastUpdated")}</span>
-          <strong>{lastUpdated ? formatFullDate(lastUpdated, currentLang) : t("directory.noUpdates")}</strong>
+          <strong>{lastUpdated ? formatBlogDate(lastUpdated, currentLang) : t("directory.noUpdates")}</strong>
         </div>
       </div>
     </section>
 
     <section class="home-section" aria-labelledby="latest-updates-heading">
       <div class="section-heading">
-        <h2 id="latest-updates-heading">最新更新</h2>
+        <h2 id="latest-updates-heading">最新发布</h2>
       </div>
       <div class="latest-list">
         {entries.slice(0, 5).map((entry) => (
           <a class="latest-item" href={getRelativeLocaleUrl(currentLang, `/blog/${entry.id}/`)}>
             <span>{entry.data.title}</span>
-            <time datetime={entry.data.pubDate.toISOString()}>{formatFullDate(entry.data.pubDate, currentLang)}</time>
+            <time datetime={entry.data.pubDate.toISOString()}>{formatBlogDate(entry.data.pubDate, currentLang)}</time>
           </a>
         ))}
       </div>
@@ -121,7 +122,7 @@ const pageTitle = `${siteConfig.title} - ${siteConfig.subTitle}`;
                 </th>
                 <td>{root.directories.length}</td>
                 <td>{articleCount}</td>
-                <td>{lastUpdated ? formatFullDate(lastUpdated, currentLang) : "暂无更新"}</td>
+                <td>{lastUpdated ? formatBlogDate(lastUpdated, currentLang) : "暂无更新"}</td>
               </tr>
             ))}
           </tbody>

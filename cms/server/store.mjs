@@ -122,13 +122,79 @@ export function dateStr(v) {
   return String(v).slice(0, 10)
 }
 
+function strictDateStr(v, field) {
+  if (v === null || v === undefined) return ''
+  if (typeof v === 'string' && !v.trim()) return ''
+  if (v instanceof Date && (Number.isNaN(v.valueOf()) || v.getUTCHours() !== 0 || v.getUTCMinutes() !== 0 || v.getUTCSeconds() !== 0 || v.getUTCMilliseconds() !== 0)) {
+    throw new Error(`${field} 必须是 date-only 值`)
+  }
+  const value = v instanceof Date ? dateStr(v) : String(v).trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${field} 必须使用 YYYY-MM-DD 格式`)
+  }
+  const date = new Date(`${value}T00:00:00.000Z`)
+  if (Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== value) {
+    throw new Error(`${field} 必须是有效的日历日期`)
+  }
+  return value
+}
+
+function rawFrontmatterValue(raw, field) {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
+  if (!match) return undefined
+  const prefix = `${field}:`
+  const line = match[1].split(/\r?\n/).find((item) => item.startsWith(prefix))
+  if (!line) return undefined
+  const value = line.slice(prefix.length).trim().replace(/\s+#.*$/, '')
+  if (value === '' || value === 'null' || value === '~') return null
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1)
+  }
+  return value
+}
+
+function validateRawUpdatedDate(raw) {
+  const value = rawFrontmatterValue(raw, 'updatedDate')
+  if (value !== undefined && value !== null) strictDateStr(value, 'updatedDate')
+}
+
+function withoutUpdateMetadata(data) {
+  const result = {}
+  for (const key of Object.keys(data).sort()) {
+    if (key === 'updatedDate' || key === 'draft') continue
+    result[key] = data[key]
+  }
+  return result
+}
+
+function dataSnapshot(data) {
+  return JSON.stringify(withoutUpdateMetadata(data))
+}
+
+function localDateStr(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
 // 规范化 frontmatter 字段
 export function normalizeData(data) {
   const d = { ...(data || {}) }
   if (d.pubDate) d.pubDate = dateStr(d.pubDate)
+  if (Object.prototype.hasOwnProperty.call(d, 'updatedDate')) {
+    const updatedDate = strictDateStr(d.updatedDate, 'updatedDate')
+    if (updatedDate) d.updatedDate = updatedDate
+    else delete d.updatedDate
+  }
+  if (d.updatedDate && d.pubDate && updatedDateBeforePubDate(d.updatedDate, d.pubDate)) {
+    throw new Error('updatedDate 不能早于 pubDate')
+  }
   if (typeof d.draft !== 'boolean') d.draft = d.draft ? true : false
   if (typeof d.pinTop !== 'number') d.pinTop = Number(d.pinTop) || 0
   return d
+}
+
+function updatedDateBeforePubDate(updatedDate, pubDate) {
+  return new Date(`${updatedDate}T00:00:00.000Z`).valueOf() < new Date(`${pubDate}T00:00:00.000Z`).valueOf()
 }
 
 async function slugIdState(rel) {
@@ -210,9 +276,11 @@ export async function readArticle(path) {
     if (!await isSafeBlogPath(`${rel}/${lang}.md`)) continue
     try {
       const raw = await readFile(join(dir, `${lang}.md`), 'utf-8')
+      validateRawUpdatedDate(raw)
       const { data, content } = matter(raw)
       files[lang] = { content, data: normalizeData(data) }
-    } catch {
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error
       /* 该语言版本不存在 */
     }
   }
@@ -227,7 +295,25 @@ export async function saveArticle(path, lang, payload) {
   if (!LANGS.includes(lang)) return { error: `不支持的语言: ${lang}` }
   if (!await isSafeBlogPath(rel)) return { error: '文章路径不能包含符号链接' }
 
-  const data = normalizeData(payload.data || {})
+  let existingArticle
+  try {
+    existingArticle = await readArticle(rel)
+  } catch (error) {
+    return { error: error?.message || '无法读取现有文章' }
+  }
+  const existingFile = existingArticle?.files[lang]
+  const hasUpdatedDateInput = Object.prototype.hasOwnProperty.call(payload.data || {}, 'updatedDate')
+  let data
+  try {
+    data = normalizeData(payload.data || {})
+  } catch (error) {
+    return { error: error?.message || '更新时间无效' }
+  }
+  if (!hasUpdatedDateInput && existingFile?.data.updatedDate) {
+    data.updatedDate = existingFile.data.updatedDate
+  }
+  const updatedDateWasChanged = hasUpdatedDateInput
+    && data.updatedDate !== existingFile?.data.updatedDate
   const slugState = await slugIdState(rel)
   if (slugState.inconsistent) return { error: '同一文章目录存在不一致的 slugId，请先人工处理' }
   const stableSlugId = slugState.slugId || (data.slugId ? String(data.slugId) : randomUUID())
@@ -250,6 +336,16 @@ export async function saveArticle(path, lang, payload) {
   } else {
     data.directory = ''
     data.category = ''
+  }
+
+  const contentChanged = existingFile
+    ? payload.body !== existingFile.content || dataSnapshot(data) !== dataSnapshot(existingFile.data)
+    : false
+  if (contentChanged && !updatedDateWasChanged) {
+    data.updatedDate = localDateStr()
+  }
+  if (data.updatedDate && updatedDateBeforePubDate(data.updatedDate, data.pubDate)) {
+    return { error: 'updatedDate 不能早于 pubDate' }
   }
 
   const writeOne = async (p, l, d, body) => {

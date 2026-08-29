@@ -30,6 +30,10 @@ const translation: Translation = {
         publicArticles: "公开文章总数",
         lastUpdated: "最后更新",
     },
+    article: {
+        publishedOn: "发布于",
+        updatedOn: "最后更新于",
+    },
     toc: "目录",
     category: "分类",
     pageNavigation: {
@@ -68,7 +72,7 @@ const translation: Translation = {
         home: "首页",
         articles: "篇文章",
         lastUpdated: "最后更新",
-        recentUpdates: "最近更新",
+        recentUpdates: "最近发布",
         subdirectories: "子目录",
         allArticles: "全部文章",
         noArticles: "暂无公开文章",

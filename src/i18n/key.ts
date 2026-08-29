@@ -62,6 +62,10 @@ export interface Translation {
         minutes: string;
         uncategorized: string;
     };
+    article?: {
+        publishedOn: string;
+        updatedOn: string;
+    };
     directory: {
         home: string;
         articles: string;

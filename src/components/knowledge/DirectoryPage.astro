@@ -1,7 +1,7 @@
 ---
 import type { DirectoryTreeContext } from "@utils/content-tree";
 import { getRelativeLocaleUrl } from "@utils/url-utils";
-import { formatFullDate, formatMonthDay } from "@utils/time";
+import { formatBlogDate, formatBlogMonthDay } from "@utils/time";
 import i18nit from "@i18n/translation";
 
 interface Props {
@@ -47,7 +47,7 @@ const articleUrl = (id: string) => getRelativeLocaleUrl(lang, `/blog/${id}/`);
       <span>{t("directory.subdirectories")}</span>
     </div>
     <div>
-      <strong>{summary.lastUpdated ? formatFullDate(summary.lastUpdated, lang) : t("directory.noUpdates")}</strong>
+      <strong>{summary.lastUpdated ? formatBlogDate(summary.lastUpdated, lang) : t("directory.noUpdates")}</strong>
       <span>{t("directory.lastUpdated")}</span>
     </div>
   </section>
@@ -79,7 +79,7 @@ const articleUrl = (id: string) => getRelativeLocaleUrl(lang, `/blog/${id}/`);
         {summary.recentArticles.map((article) => (
           <a class="article-row" href={articleUrl(article.id)}>
             <span>{article.data.title}</span>
-            <time datetime={article.data.pubDate.toISOString()}>{formatMonthDay(article.data.pubDate, lang)}</time>
+            <time datetime={article.data.pubDate.toISOString()}>{formatBlogMonthDay(article.data.pubDate, lang)}</time>
           </a>
         ))}
       </div>
@@ -101,7 +101,7 @@ const articleUrl = (id: string) => getRelativeLocaleUrl(lang, `/blog/${id}/`);
               <h3>{article.data.title}</h3>
               {article.data.description && <p>{article.data.description}</p>}
             </div>
-            <time datetime={article.data.pubDate.toISOString()}>{formatFullDate(article.data.pubDate, lang)}</time>
+            <time datetime={article.data.pubDate.toISOString()}>{formatBlogDate(article.data.pubDate, lang)}</time>
           </a>
         ))}
       </div>

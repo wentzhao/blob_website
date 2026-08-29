@@ -24,6 +24,16 @@ export type BlogQueryOptions = {
   sort?: (a: CollectionEntry<"blog">, b: CollectionEntry<"blog">) => number;
 };
 
+export type BlogDateData = {
+  pubDate: Date;
+  updatedDate?: Date;
+};
+
+/** Returns a defensive copy of the effective last-update date for statistics. */
+export function getBlogLastUpdated(data: BlogDateData): Date {
+  return new Date((data.updatedDate ?? data.pubDate).valueOf());
+}
+
 let publicGroupsPromise: Promise<PublicBlogEntryGroup[]> | undefined;
 
 function getRouteId(entry: CollectionEntry<"blog">) {
