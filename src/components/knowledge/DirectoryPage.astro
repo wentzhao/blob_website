@@ -16,7 +16,7 @@ const directoryUrl = (id: string) => getRelativeLocaleUrl(lang, `/knowledge/${id
 const articleUrl = (id: string) => getRelativeLocaleUrl(lang, `/blog/${id}/`);
 ---
 
-<div class="directory-page page-shell" data-pagefind-ignore>
+<div class="directory-page" data-pagefind-ignore>
   <nav class="directory-breadcrumbs" aria-label="目录路径">
     <a href={getRelativeLocaleUrl(lang, "/")}>{t("directory.home")}</a>
     {context.path.map((node, index) => (

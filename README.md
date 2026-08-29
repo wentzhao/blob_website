@@ -4,7 +4,7 @@
 
 ## 特性
 
-- Astro 7 静态站点，默认中文并保留英文路由
+- Astro 7 静态站点，仅生成中文路由
 - 知识库式首页：分类、目录和最近更新
 - 桌面端左侧知识树、中央正文、右侧本页目录
 - Momo 的 Pagefind 本地搜索、RSS、代码高亮、KaTeX、提示块和图片查看
@@ -39,15 +39,15 @@ draft: false
 pinTop: 0
 ```
 
-首次创建文章使用 `pnpm newpost -- <文章路径> <directory> [zh-cn|en]`，例如 `pnpm newpost -- deep-learning/transformer-notes deep-learning/paper-reading/transformer`。创建同目录译文时会继承兄弟文件的 `directory`、派生的 `category` 和共享 `slugId`。`slugId` 是独立稳定的外部标识，文章目录移动时不会自动改写；已有文章的 `slugId` 不迁移。作者只编辑 `directory`，`category` 由其根目录派生；草稿可暂时没有目录，但公开文章缺少、使用未知目录或译文目录不一致都会使构建失败。
+首次创建文章使用 `pnpm newpost -- <文章路径> <directory> zh-cn`，例如 `pnpm newpost -- deep-learning/transformer-notes deep-learning/paper-reading/transformer`。`slugId` 是独立稳定的外部标识，文章目录移动时不会自动改写；已有文章的 `slugId` 不迁移。作者只编辑 `directory`，`category` 由其根目录派生；草稿可暂时没有目录，但公开文章缺少或使用未知目录都会使构建失败。
 
-目录注册表集中在 `src/content/directory-tree.json`，`src/content/navigation.ts` 负责校验并投影顶级导航。公开列表、详情路由、RSS 和 Pagefind 在所有环境都会过滤 `draft: true` 的文章；英文缺失时的回退和目录树的可用语言状态也只基于公开版本。
+目录注册表集中在 `src/content/directory-tree.json`，`src/content/navigation.ts` 负责校验并投影顶级导航。公开列表、详情路由、RSS 和 Pagefind 在所有环境都会过滤 `draft: true` 的文章；公开站点只输出中文内容。
 
-每个通过校验的目录都会生成中文静态目录页，路由为 `/knowledge/<directoryId>/`。目录页展示中文名称和说明、直属子目录、当前目录及所有后代目录中的中文公开文章、文章总数、最近更新和最后更新时间；空目录也会生成页面，未知目录按 404 处理。目录统计只读取中文公开版本，英文源文件不进入中文公开输出。站点当前只生成中文页面，不生成 `/en/` locale 路由。
+每个通过校验的目录都会生成中文静态目录页，路由为 `/knowledge/<directoryId>/`。目录页展示中文名称和说明、直属子目录、当前目录及所有后代目录中的中文公开文章、文章总数、最近更新和最后更新时间；空目录也会生成页面，未知目录按 404 处理。站点只生成中文页面，不生成 `/en/` locale 路由。
 
 目录页及首页、归档、关于、友链和 404 等非文章页面会从 Pagefind 排除，搜索只索引中文文章详情页。目录和文章链接统一经过 URL helper，在根路径或设置 `BASE_PATH` 的部署下保持部署前缀。
 
-支持中文和英文文章：在同一个文章目录下分别创建 `zh-cn.md` 与 `en.md`，文件夹路径决定文章路由 ID。没有英文版本时，英文路由会回退到中文内容并显示提示；只有英文版本的文章不会出现在默认中文列表中。
+文章文件统一使用 `zh-cn.md`，文件夹路径决定文章路由 ID。项目不创建英文文章、英文 fallback 或英文路由。
 
 ## 配置
 
@@ -78,7 +78,7 @@ pinTop: 0
 
 ### 2026-08-28
 
-风险修复：统一文章 schema 与 newpost 模板，隐藏所有环境的草稿，补齐 locale 回退和根路径 URL，收窄导航 children 为说明项，收敛 Pagefind 搜索生命周期并按 locale 过滤，修复 RSS 链接，同时记录分页遗留和 CMS 独立写入边界。
+风险修复：统一文章 schema 与 newpost 模板，隐藏所有环境的草稿，收敛为中文-only 站点并统一根路径 URL，收窄导航 children 为说明项，收敛 Pagefind 搜索生命周期，修复 RSS 链接，同时记录分页遗留和 CMS 独立写入边界。
 
 ## 来源与许可证
 

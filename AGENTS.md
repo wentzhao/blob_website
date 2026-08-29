@@ -13,11 +13,11 @@ AI 助手在此仓库中工作时的指导说明。
 
 ## 项目概览
 
-- 本项目是一个以知识库方式组织的双语个人博客，基于 Astro 7、TypeScript 和 Svelte 5，默认生成静态站点。
+- 本项目是一个以知识库方式组织的中文个人博客，基于 Astro 7、TypeScript 和 Svelte 5，默认生成静态站点。
 - 根应用负责公开站点：页面入口在 `src/pages/`，内容在 `src/content/`，布局与组件在 `src/layouts/` 和 `src/components/`，Markdown 扩展在 `src/plugins/`。
 - `cms/` 是 pnpm workspace 中独立的本地内容管理工具。它使用 Vite、Hono 和原生 TypeScript SPA，直接读写 `src/content/blog/**/*.md`，不属于生产静态站点的运行时依赖。
 - 生产构建链为 `Astro Content Collections -> Astro 静态页面 -> dist/ -> Pagefind 索引`。`pnpm build` 已包含 Astro 构建和 Pagefind 索引生成。
-- 支持 `zh-cn` 和 `en`。中文是默认语言并使用无前缀路由，英文使用 `/en/` 前缀；部署子路径由 `BASE_PATH` 处理。
+- 公开站点只支持 `zh-cn`，使用无前缀路由；不得新增英文页面、英文内容或 `/en/` 路由。部署子路径由 `BASE_PATH` 处理。
 
 ### 主要职责边界
 
@@ -25,7 +25,7 @@ AI 助手在此仓库中工作时的指导说明。
 - `src/utils/content-utils.ts`：公开文章查询、草稿过滤、排序、语言选择与默认语言回退。
 - `src/content/navigation.ts`：首页知识库顶级分类及其说明性目录。
 - `src/config.ts`：站点、个人资料、评论、主题和许可证配置。
-- `src/i18n/`：界面翻译；文章翻译不放在这里，而是使用同一文章目录中的不同语言 Markdown 文件。
+- `src/i18n/`：中文界面文案；文章内容只使用中文 Markdown 文件。
 - `src/utils/url-utils.ts`：`BASE_PATH`、locale 路由和文章资源路径的统一拼接入口。
 - `astro.config.mjs`：站点 URL、base path、i18n、Astro 集成及正式 Markdown 处理管线。
 - `cms/server/store.mjs`：CMS 对博客内容的统一读写边界；不要在新的 CMS API 中绕过它直接操作文章文件。
@@ -42,10 +42,16 @@ AI 助手在此仓库中工作时的指导说明。
 - 修改路由、内容 schema、Markdown 插件顺序、公共组件接口或 CMS 写入格式时，要同时检查其所有消费者，并在交付说明中指出行为变化。
 - `.ai_docs/` 中标有“AI 初稿，待确认”的文件是参考材料，不是高于当前代码和本文件的强制规范。
 
+### 项目级语言限制
+
+- 本项目是中文博客，公开站点唯一语言为 `zh-cn`；所有页面、导航、面包屑、目录标签、文章内容和新增界面文案必须使用中文。
+- 不得新增、恢复或暴露英文页面、英文文章、英文目录标签、英文翻译文件或 `/en/` 路由；不得为了“兼容未来多语言”增加英文 fallback、英文静态路径或英文验收项。
+- 既有代码中的英文技术标识、依赖名、许可证文本和实现注释不属于站点内容；修改时不得将其渲染为公开 UI 文案。
+
 
 ### 内容修改
 
-- 博客文章位于 `src/content/blog/<文章路径>/<语言>.md`，语言文件名只能使用 `zh-cn.md` 或 `en.md`。目录路径构成文章路由 ID；移动目录会改变 URL。
+- 博客文章位于 `src/content/blog/<文章路径>/zh-cn.md`。目录路径构成文章路由 ID；移动目录会改变 URL。
 - 同一文章目录的不同语言版本必须共用 `slugId`。`slugId` 是评论等外部系统使用的稳定标识，不决定路由，不应因改标题、翻译或移动目录而随意更换。
 - `blog` frontmatter 以 `src/content.config.ts` 为准：
 
@@ -62,9 +68,9 @@ AI 助手在此仓库中工作时的指导说明。
 
   `title`、`pubDate`、`slugId` 必填；其余字段已有默认值或允许省略。不要写入 schema 未定义的业务字段。
 - `draft: true` 必须在首页、归档、详情静态路由、RSS 和 Pagefind 中保持不可见。不要为方便预览而放宽公开查询。
-- 默认语言列表只收录存在中文版本的文章；访问英文路由且英文版本缺失时可回退到中文并显示提示。只有英文版本的文章不应自动进入中文列表。
-- `src/content/spec/` 存放关于页和友链页等固定内容，其 frontmatter 当前只允许 `title`。修改时保持中英文文件结构一致。
-- 新文章优先使用 `pnpm newpost -- <文章路径> [zh-cn|en]` 或本地 CMS。脚手架默认创建公开文章，CMS 默认创建草稿，提交前必须确认 `draft` 状态。
+- 默认语言列表只收录中文公开文章；不生成英文路由或英文回退页面。
+- `src/content/spec/` 存放关于页和友链页等固定内容，其 frontmatter 当前只允许 `title`。修改时保持中文文件结构一致。
+- 新文章优先使用 `pnpm newpost -- <文章路径> zh-cn` 或本地 CMS。脚手架默认创建公开文章，CMS 默认创建草稿，提交前必须确认 `draft` 状态。
 - 文章目录内图片优先使用 `./文件名` 相对路径；公共静态资源放在 `public/`。不要用绝对本地文件路径写入内容。
 
 
@@ -78,10 +84,10 @@ AI 助手在此仓库中工作时的指导说明。
 
 ### 新增站点
 
-- 这里的“站点”指新增公开页面或内容入口。页面放在 `src/pages/`，双语页面沿用 `[...locale]` 路由，并为 `zh-cn` 与 `en` 提供 `getStaticPaths()`。
+- 这里的“站点”指新增公开页面或内容入口。页面放在 `src/pages/`，沿用 `[...locale]` 路由结构但只为 `zh-cn` 提供 `getStaticPaths()`。
 - 普通页面优先使用 `MainPageLayout.astro`，以继承 Header、Footer、Search、主题和页面过渡；只有需要修改完整 HTML 文档结构时才直接使用 `Layout.astro`。
-- 新增界面文案时，同步维护 `src/i18n/key.ts`、`src/i18n/language/zh-cn.ts` 和 `src/i18n/language/en.ts`。内容型长文优先放入 `src/content/spec/`，并按需先明确扩展其 schema。
-- 新页面的内部链接必须通过 `getRelativeLocaleUrl()` 生成，静态资源通过 `baseUrl()` 生成；同时验证默认语言、英文前缀和非根 `BASE_PATH`。
+- 新增界面文案时，维护 `src/i18n/key.ts` 和 `src/i18n/language/zh-cn.ts`。内容型长文优先放入 `src/content/spec/`，并按需先明确扩展其 schema。
+- 新页面的内部链接必须通过 `getRelativeLocaleUrl()` 生成，静态资源通过 `baseUrl()` 生成；同时验证中文路由和非根 `BASE_PATH`。
 - 若页面需要进入 Header、首页知识库或其他导航，显式修改对应数据源。文件路由的存在不会自动把页面加入导航。
 - 新增新的独立应用或部署单元不属于普通“新增页面”，必须先说明构建、发布、配置和维护边界，获得确认后再实施。
 
@@ -109,7 +115,7 @@ AI 助手在此仓库中工作时的指导说明。
 - 修改页面、路由、内容查询、Markdown 插件、构建配置或部署路径：运行 `pnpm exec astro check` 和 `pnpm build`。
 - 修改搜索：完成生产构建后使用 `pnpm preview` 验证，因为 `pnpm dev` 不生成 Pagefind 索引。
 - 修改 CMS 前端或服务端：运行 `pnpm --dir cms build`；涉及创建、保存、上传或删除时，在 CMS 服务运行期间执行 `pnpm --dir cms smoke`，并确认测试没有遗留文章。
-- 修改布局、交互、主题或响应式样式：除命令检查外，手工检查桌面端和移动端、浅色和深色主题、键盘焦点与目标 locale。
+- 修改布局、交互、主题或响应式样式：除命令检查外，手工检查桌面端和移动端、浅色和深色主题、键盘焦点与 `zh-cn` 路由。
 - 只报告实际运行过的检查。若未运行或失败，明确说明原因，不通过删除校验、放宽 schema 或隐藏错误来制造通过结果。
 
 

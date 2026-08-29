@@ -19,6 +19,15 @@ export interface Translation {
             friends: string;
         };
     };
+    home?: {
+        infoAriaLabel: string;
+        infoLabel: string;
+        infoTitle: string;
+        infoDescription: string;
+        topCategoriesCount: string;
+        publicArticles: string;
+        lastUpdated: string;
+    };
     toc:string;
     category: string;
     pageNavigation: {

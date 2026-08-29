@@ -6,6 +6,8 @@ import { getContentTree, getDirectoryTreeContext } from "@utils/content-tree";
 import { i18n } from "astro:config/client";
 import { siteConfig } from "@/config";
 
+const currentLang = i18n!.defaultLocale;
+
 export async function getStaticPaths() {
   const localeCode = i18n!.defaultLocale;
   await getContentTree(localeCode);
@@ -26,6 +28,6 @@ if (!context) throw new Error(`Missing content tree context for directory ${Astr
 const pageTitle = `${context.directory.label} - ${siteConfig.title}`;
 ---
 
-<MainPageLayout title={pageTitle} lang="zh-cn" description={context.directory.description} pagefindIgnore>
+<MainPageLayout title={pageTitle} lang={currentLang} description={context.directory.description} treeContext={context} pagefindIgnore>
   <DirectoryPage context={context} lang="zh-cn" />
 </MainPageLayout>

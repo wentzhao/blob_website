@@ -2,7 +2,6 @@
 import { Icon } from "astro-icon/components";
 import { i18n } from "astro:config/client";
 import i18nit from "@i18n/translation";
-import { siteConfig } from "@/config";
 import { topSections } from "@/content/navigation";
 import { baseUrl, getRelativeLocaleUrl } from "@utils/url-utils";
 import ThemeIcon from "./control/ThemeIcon.astro";
@@ -13,13 +12,14 @@ const indexPage = getRelativeLocaleUrl(currentLang, "/");
 const archivePage = getRelativeLocaleUrl(currentLang, "/archives/");
 const aboutPage = getRelativeLocaleUrl(currentLang, "/about/");
 const rssPage = baseUrl("/rss.xml");
+const brandName = "wentZh";
 ---
 
 <header id="main-header" class="site-header">
   <div class="site-header__inner">
-    <a class="site-brand" href={indexPage} aria-label={`${siteConfig.title} 首页`}>
+    <a class="site-brand" href={indexPage} aria-label={`${brandName} 首页`}>
       <span class="site-brand__mark" aria-hidden="true">/</span>
-      <span>{siteConfig.title}</span>
+      <span>{brandName}</span>
     </a>
 
     <nav class="site-nav" aria-label="主导航">
@@ -44,7 +44,7 @@ const rssPage = baseUrl("/rss.xml");
     <div id="mobile-menu-overlay" class="mobile-menu__overlay"></div>
     <nav id="mobile-menu-drawer" class="mobile-menu__drawer" aria-label="移动端导航">
       <div class="mobile-menu__top">
-        <strong>{siteConfig.title}</strong>
+        <strong>{brandName}</strong>
         <button id="mobile-menu-close" class="icon-button" type="button" aria-label="关闭导航">
           <Icon name="fa6-solid:xmark" class="h-4 w-4" />
         </button>
@@ -64,17 +64,17 @@ const rssPage = baseUrl("/rss.xml");
 
 <style>
   .site-header { position: sticky; top: 0; z-index: 50; border-top: 14px solid var(--accent-color); background: var(--bg-color); }
-  .site-header__inner { width: var(--header-width); min-height: 5rem; margin: auto; display: flex; align-items: center; gap: 3rem; }
+  .site-header__inner { position: relative; width: 100%; min-height: 5rem; padding-inline: clamp(1rem, 2vw, 2rem); margin: auto; display: flex; align-items: center; box-sizing: border-box; }
   .site-brand { display: inline-flex; align-items: center; gap: .45rem; font-size: 1.05rem; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
   .site-brand:hover { color: var(--link-color); }
   .site-brand__mark { color: var(--accent-color); font: 700 1.5rem/1 "JetBrains Mono", monospace; }
-  .site-nav { display: flex; align-items: center; gap: 1.55rem; color: var(--text-color-70); font-size: .72rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+  .site-nav { position: absolute; left: 50%; display: flex; align-items: center; gap: 1.55rem; transform: translateX(-50%); color: var(--text-color-70); font-size: .72rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
   .site-nav a:hover { color: var(--link-color); }
   .site-tools { margin-left: auto; display: flex; align-items: center; gap: .45rem; }
   .icon-button { width: 2.25rem; height: 2.25rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: .35rem; color: var(--text-color-70); background: transparent; cursor: pointer; }
   .icon-button:hover { color: var(--link-color); background: var(--button-hover-color); }
   .mobile-only { display: none; }
-  @media (max-width: 1023px) { .site-header { border-top-width: 8px; } .site-header__inner { width: min(var(--content-width), calc(100vw - 1.5rem)); min-height: 4.25rem; } .site-nav { display: none; } .mobile-only { display: inline-flex; } }
+  @media (max-width: 1023px) { .site-header { border-top-width: 8px; } .site-header__inner { width: min(var(--content-width), calc(100vw - 1.5rem)); min-height: 4.25rem; padding-inline: 0; } .site-nav { display: none; } .mobile-only { display: inline-flex; } }
   .mobile-menu { position: fixed; inset: 0; z-index: 100; }
   .mobile-menu__overlay { position: absolute; inset: 0; background: rgb(0 0 0 / .35); }
   .mobile-menu__drawer { position: absolute; right: 0; top: 0; bottom: 0; width: min(88vw, 22rem); display: flex; flex-direction: column; gap: .25rem; padding: 1.25rem; overflow: auto; background: var(--bg-color); box-shadow: -12px 0 30px var(--shadow-color); }

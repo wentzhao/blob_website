@@ -21,6 +21,15 @@ const translation: Translation = {
             friends: "有趣的灵魂",
         }
     },
+    home: {
+        infoAriaLabel: "站点信息",
+        infoLabel: "知识库概览",
+        infoTitle: "欢迎来到我的笔记空间",
+        infoDescription: "这里记录学习、实践和思考，也整理着那些值得再次进入的知识路径。",
+        topCategoriesCount: "顶级分类",
+        publicArticles: "公开文章总数",
+        lastUpdated: "最后更新",
+    },
     toc: "目录",
     category: "分类",
     pageNavigation: {

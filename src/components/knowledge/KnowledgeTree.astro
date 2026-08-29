@@ -1,51 +1,121 @@
 ---
-import type { CollectionEntry } from "astro:content";
+import type { ArticleTreeContext, DirectoryNode, DirectoryTreeContext } from "@utils/content-tree";
 import { getRelativeLocaleUrl } from "@utils/url-utils";
-import { topSections } from "@/content/navigation";
+
+type TreeContext = ArticleTreeContext | DirectoryTreeContext;
 
 interface Props {
-  entries: CollectionEntry<"blog">[];
-  activeId?: string;
+  roots: readonly DirectoryNode[];
+  treeContext?: TreeContext;
   lang: string;
+  node?: DirectoryNode;
 }
 
-const { entries, activeId, lang } = Astro.props;
+const { roots, treeContext, lang, node } = Astro.props;
+const isArticleContext = (context?: TreeContext): context is ArticleTreeContext => Boolean(context && "article" in context);
+const activeArticleId = isArticleContext(treeContext) ? treeContext.article.id : undefined;
+const activeDirectoryId = treeContext?.directory.id;
+const ancestorDirectoryIds = new Set(treeContext?.ancestors.map((ancestor) => ancestor.id) ?? []);
+const directoryUrl = (id: string) => getRelativeLocaleUrl(lang, `/knowledge/${id}/`);
+const articleUrl = (id: string) => getRelativeLocaleUrl(lang, `/blog/${id}/`);
+const isActiveDirectory = (directory: DirectoryNode) => directory.id === activeDirectoryId;
+const isAncestorDirectory = (directory: DirectoryNode) => ancestorDirectoryIds.has(directory.id);
+const childrenId = (id: string) => `knowledge-tree-children-${encodeURIComponent(id)}`;
 ---
 
-<aside class="knowledge-tree" aria-label="知识库导航">
-  <p class="knowledge-tree__label">Knowledge base</p>
-  <a class="knowledge-tree__home" href={getRelativeLocaleUrl(lang, "/")}>全部内容</a>
-  {topSections.map((section) => {
-    const sectionEntries = entries.filter((entry) => entry.data.category === section.label);
-    return (
-      <div class="knowledge-tree__section">
-        <a class="knowledge-tree__section-link" href={getRelativeLocaleUrl(lang, section.directoryPath)}>{section.label}</a>
-        <div class="knowledge-tree__entries">
-          {sectionEntries.map((entry) => (
-            <a
-              href={getRelativeLocaleUrl(lang, `/blog/${entry.id}`)}
-              class:list={{ active: entry.id === activeId }}
-              aria-current={entry.id === activeId ? "page" : undefined}
-            >{entry.data.title}</a>
-          ))}
-          {sectionEntries.length === 0 && <span class="knowledge-tree__empty">暂无文章</span>}
+{node ? (
+  <li class:list={{ "knowledge-tree__node": true, "knowledge-tree__node--ancestor": isAncestorDirectory(node) }}>
+    {node.children.length > 0 ? (
+      <>
+        <div class="knowledge-tree__directory-row">
+          <a
+              class="knowledge-tree__directory-link"
+              class:list={{ active: isActiveDirectory(node), "knowledge-tree__directory-link--top-level": !node.parentId }}
+              href={directoryUrl(node.id)}
+              aria-current={isActiveDirectory(node) ? "page" : undefined}
+            >{node.label}</a>
+          <button
+            class="knowledge-tree__toggle"
+            type="button"
+            aria-expanded="true"
+            aria-controls={childrenId(node.id)}
+            aria-label={`折叠${node.label}`}
+            data-knowledge-tree-toggle
+          >
+            <span class="knowledge-tree__arrow" aria-hidden="true"></span>
+          </button>
         </div>
-      </div>
-    );
-  })}
-</aside>
+        <ul class="knowledge-tree__children" id={childrenId(node.id)}>
+          {node.children.map((child) => child.kind === "directory" ? (
+            <Astro.self roots={roots} treeContext={treeContext} lang={lang} node={child} />
+          ) : (
+            <li class="knowledge-tree__node knowledge-tree__node--article">
+              <a
+                href={articleUrl(child.id)}
+                class:list={{ active: child.id === activeArticleId }}
+                aria-current={child.id === activeArticleId ? "page" : undefined}
+              >{child.data.title}</a>
+              </li>
+          ))}
+        </ul>
+      </>
+    ) : (
+      <a
+        class="knowledge-tree__directory-link"
+        class:list={{ active: isActiveDirectory(node), "knowledge-tree__directory-link--top-level": !node.parentId }}
+        href={directoryUrl(node.id)}
+        aria-current={isActiveDirectory(node) ? "page" : undefined}
+      >{node.label}</a>
+    )}
+  </li>
+) : (
+  <aside class="knowledge-tree" aria-label="知识库导航">
+    <p class="knowledge-tree__label">知识库</p>
+    <a class="knowledge-tree__home" href={getRelativeLocaleUrl(lang, "/")}>全部内容</a>
+    <nav aria-label="知识目录">
+      <ul class="knowledge-tree__roots">
+        {roots.map((root) => (
+          <Astro.self roots={roots} treeContext={treeContext} lang={lang} node={root} />
+        ))}
+      </ul>
+    </nav>
+  </aside>
+  <script>
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const toggle = target.closest("[data-knowledge-tree-toggle]");
+      if (!(toggle instanceof HTMLButtonElement)) return;
+      const panelId = toggle.getAttribute("aria-controls");
+      if (!panelId) return;
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-expanded", String(!expanded));
+      panel.hidden = expanded;
+      toggle.setAttribute("aria-label", `${expanded ? "展开" : "折叠"}${toggle.parentElement?.querySelector(".knowledge-tree__directory-link")?.textContent?.trim() || "目录"}`);
+    });
+  </script>
+)}
 
 <style>
-  .knowledge-tree { position: sticky; top: 6rem; align-self: start; max-height: calc(100vh - 8rem); overflow: auto; padding-right: 1rem; font-size: .9rem; }
+  .knowledge-tree { position: sticky; top: 6rem; align-self: start; min-width: 0; max-height: calc(100vh - 8rem); overflow: auto; padding-right: 1rem; font-size: .9rem; }
   .knowledge-tree__label { margin: 0 0 1rem; color: var(--text-color-70); font: 700 .7rem/1.2 "JetBrains Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
-  .knowledge-tree__home, .knowledge-tree__section-link { display: block; font-weight: 700; }
+  .knowledge-tree__home, .knowledge-tree__directory-link { display: block; font-weight: 400; overflow-wrap: anywhere; }
   .knowledge-tree__home { padding: .5rem .65rem; background: var(--surface-color); border-radius: .45rem; }
-  .knowledge-tree__section { margin-top: 1.25rem; }
-  .knowledge-tree__section-link { color: var(--text-color); margin-bottom: .35rem; }
-  .knowledge-tree__section-link:hover, .knowledge-tree__entries a:hover { color: var(--link-color); }
-  .knowledge-tree__entries { display: flex; flex-direction: column; gap: .12rem; border-left: 1px solid var(--button-border-color); margin-left: .3rem; padding-left: .75rem; }
-  .knowledge-tree__entries a { color: var(--text-color-70); padding: .28rem .35rem; border-radius: .3rem; }
-  .knowledge-tree__entries a.active { color: var(--link-color); background: var(--button-hover-color); font-weight: 700; }
-  .knowledge-tree__empty { color: var(--text-color-70); font-size: .82rem; }
+  .knowledge-tree__roots, .knowledge-tree__children { display: flex; flex-direction: column; gap: .12rem; margin: 0; padding: 0; list-style: none; }
+  .knowledge-tree__roots { margin-top: 1.25rem; }
+  .knowledge-tree__children { margin: .2rem 0 0 .3rem; padding-left: .75rem; border-left: 1px solid var(--button-border-color); }
+  .knowledge-tree__directory-row { display: flex; align-items: flex-start; gap: .25rem; min-width: 0; }
+  .knowledge-tree__directory-link, .knowledge-tree__node--article a { min-width: 0; padding: .28rem .35rem; border-radius: .3rem; }
+  .knowledge-tree__directory-link { flex: 1; }
+  .knowledge-tree__directory-link:hover, .knowledge-tree__node--article a:hover { color: var(--link-color); }
+  .knowledge-tree__toggle { flex: none; width: 1.5rem; height: 1.5rem; margin: .18rem 0 0; padding: 0; border: 0; border-radius: .3rem; background: transparent; color: inherit; cursor: pointer; }
+  .knowledge-tree__toggle:hover { background: var(--button-hover-color); }
+  .knowledge-tree__arrow { display: inline-block; width: .45rem; height: .45rem; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; transform: translateY(-.1rem) rotate(45deg); transition: transform .2s ease; }
+  .knowledge-tree__toggle[aria-expanded="false"] .knowledge-tree__arrow { transform: translateY(.1rem) rotate(-45deg); }
+  .knowledge-tree__directory-link--top-level { font-weight: 700; }
+  .knowledge-tree__node--article a { display: block; color: var(--text-color-70); overflow-wrap: anywhere; }
+  .knowledge-tree__directory-link.active, .knowledge-tree__node--article a.active { color: var(--link-color); background: var(--button-hover-color); }
   @media (max-width: 1023px) { .knowledge-tree { display: none; } }
 </style>

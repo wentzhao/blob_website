@@ -9,7 +9,6 @@ import LicenseCard from "@components/misc/LicenseCard.astro";
 import Comments from "@components/comment/Comments.svelte";
 import Twikoo from "@components/comment/thirdparty/twikoo.astro";
 import BlogNavi from "@components/control/BlogNavi.astro";
-import KnowledgeTree from "@components/knowledge/KnowledgeTree.astro";
 import OnThisPage from "@components/knowledge/OnThisPage.astro";
 import { render } from "astro:content";
 import { i18n } from "astro:config/client";
@@ -20,7 +19,7 @@ import { formatFullDate } from "@utils/time";
 import { getBlogEntrySort } from "@utils/content-utils";
 import { getArticleTreeContext, getContentTree } from "@utils/content-tree";
 
-const currentLang = Astro.currentLocale || i18n!.defaultLocale;
+const currentLang = i18n!.defaultLocale;
 const t = i18nit(currentLang);
 
 export async function getStaticPaths() {
@@ -45,18 +44,27 @@ export async function getStaticPaths() {
 const { entry, prev, next, treeContext } = Astro.props;
 if (!treeContext) throw new Error(`Missing content tree context for article ${entry.id}`);
 const { Content, headings, remarkPluginFrontmatter } = await render(entry);
-const tree = await getContentTree(currentLang);
-const allEntries = [...tree.articleById.values()];
 const pageTitle = `${entry.data.title} - ${siteConfig.title}`;
 const image = blogCoverUrl(entry.data.image, entry.id);
 ---
 
-<MainPageLayout title={pageTitle} lang={currentLang} description={entry.data.description}>
-  <div class="article-layout page-shell">
-    <KnowledgeTree entries={allEntries} activeId={entry.id} lang={currentLang} />
-
+<MainPageLayout title={pageTitle} lang={currentLang} description={entry.data.description} treeContext={treeContext}>
+  <div class="article-layout">
     <article class="article-main">
       <header class="article-header">
+        <nav class="article-breadcrumbs" aria-label="文章路径">
+          <a href={getRelativeLocaleUrl(currentLang, "/")}>{t("directory.home")}</a>
+          {treeContext.path.map((node) => (
+            <>
+              <span aria-hidden="true">/</span>
+              {node.kind === "directory" ? (
+                <a href={getRelativeLocaleUrl(currentLang, `/knowledge/${node.id}/`)}>{node.label}</a>
+              ) : (
+                <span aria-current="page">{node.data.title}</span>
+              )}
+            </>
+          ))}
+        </nav>
         <p class="eyebrow">{entry.data.category || t("pagecard.uncategorized")}</p>
         <h1>{entry.data.title}</h1>
         {entry.data.description && <p class="article-description">{entry.data.description}</p>}
@@ -88,9 +96,13 @@ const image = blogCoverUrl(entry.data.image, entry.id);
 </MainPageLayout>
 
 <style>
-  .article-layout { display: grid; grid-template-columns: 205px minmax(0, var(--reading-width)) 205px; justify-content: space-between; gap: 2rem; padding-top: 7rem; }
+  .article-layout { display: grid; grid-template-columns: minmax(0, var(--reading-width)) minmax(0, 1fr); gap: 2rem; padding-top: 7rem; }
   .article-main { min-width: 0; }
-  .article-header { padding-bottom: 2.5rem; border-bottom: 1px solid var(--button-border-color); }
+  .article-main :global(a) { overflow-wrap: anywhere; }
+  .article-header { min-width: 0; padding-bottom: 2.5rem; border-bottom: 1px solid var(--button-border-color); }
+  .article-breadcrumbs { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: 2rem; color: var(--text-color-70); font-size: .82rem; line-height: 1.5; }
+  .article-breadcrumbs a, .article-breadcrumbs span { min-width: 0; overflow-wrap: anywhere; }
+  .article-breadcrumbs a:hover { color: var(--link-color); }
   .eyebrow { margin: 0 0 .75rem; color: var(--accent-color); font: 700 .72rem/1.2 "JetBrains Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
   .article-header h1 { margin: 0; font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.12; letter-spacing: -.055em; }
   .article-description { margin: 1rem 0 0; color: var(--text-color-70); line-height: 1.7; }
@@ -99,7 +111,10 @@ const image = blogCoverUrl(entry.data.image, entry.id);
   .article-meta a { color: var(--link-color); }
   .article-cover { max-height: 360px; margin: 2rem 0; overflow: hidden; border-radius: .7rem; }
   .fallback-note { margin: 1.5rem 0; padding: .8rem 1rem; border-left: 3px solid var(--accent-color); background: var(--surface-color); color: var(--text-color-70); font-size: .9rem; }
-  @media (max-width: 1099px) { .article-layout { grid-template-columns: 205px minmax(0, var(--reading-width)); justify-content: center; padding-top: 5rem; } }
+  @media (max-width: 1199px) {
+    .article-layout { grid-template-columns: minmax(0, 1fr); width: min(var(--reading-width), 100%); margin-inline: auto; padding-top: 5rem; }
+    .article-layout > :global(.on-this-page) { display: none; }
+  }
   @media (max-width: 1023px) { .article-layout { display: block; width: min(var(--reading-width), calc(100vw - 2rem)); padding-top: 3rem; } }
   @media (max-width: 640px) { .article-layout { width: calc(100vw - 1.5rem); padding-top: 2.5rem; } .article-header h1 { font-size: 2rem; } .article-meta { gap: .5rem .8rem; } }
 </style>
