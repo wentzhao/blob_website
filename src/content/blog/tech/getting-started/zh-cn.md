@@ -1,12 +1,14 @@
 ---
 title: 从一篇笔记开始
-pubDate: 2026-08-28
+pubDate: '2026-08-28'
 description: 这是一个用于验证知识库式博客体验的示例文章。
-directory: deep-learning
-category: 深度学习
-image: ""
+directory: tools/common-tools
+category: 工具使用
+image: ''
 draft: false
 slugId: getting-started
+pinTop: 0
+updatedDate: '2026-08-29'
 ---
 
 一个好的知识库不需要从完整开始，只需要让下一次查找比上一次更容易。
