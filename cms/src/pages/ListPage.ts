@@ -4,7 +4,7 @@ import { navigate } from '../router'
 import { el, encodePath } from '../dom'
 import { toast } from '../ui'
 import { pageHeader } from './header'
-import { openNewModal } from './new-article'
+import { openImportModal, openNewModal } from './new-article'
 
 type ViewMode = 'card' | 'table'
 
@@ -42,8 +42,11 @@ export async function renderList(root: HTMLElement) {
   root.append(
     pageHeader(
       'list',
-      el('button', { class: 'btn btn-primary', id: 'btn-new', onclick: () => openNewModal(root, state.categories) }, [
-        '＋ 新建文章',
+      el('div', { class: 'header-actions' }, [
+        el('button', { class: 'btn', id: 'btn-import', onclick: () => openImportModal(root) }, ['↑ 导入 Markdown']),
+        el('button', { class: 'btn btn-primary', id: 'btn-new', onclick: () => openNewModal(root, state.categories) }, [
+          '＋ 新建文章',
+        ]),
       ]),
     ),
     el('main', { class: 'cms-main' }, [

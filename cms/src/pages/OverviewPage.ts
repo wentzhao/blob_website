@@ -2,7 +2,7 @@ import { api } from '../api'
 import type { ArticleSummary, Stats } from '../types'
 import { el, encodePath, escapeHtml } from '../dom'
 import { pageHeader } from './header'
-import { openNewModal } from './new-article'
+import { openImportModal, openNewModal } from './new-article'
 
 const fmt = new Intl.NumberFormat('zh-CN')
 
@@ -13,8 +13,11 @@ export async function renderOverview(root: HTMLElement) {
   root.append(
     pageHeader(
       'overview',
-      el('button', { class: 'btn btn-primary', id: 'btn-new', onclick: () => openNewModal(root, categories) }, [
-        '＋ 新建文章',
+      el('div', { class: 'header-actions' }, [
+        el('button', { class: 'btn', id: 'btn-import', onclick: () => openImportModal(root) }, ['↑ 导入 Markdown']),
+        el('button', { class: 'btn btn-primary', id: 'btn-new', onclick: () => openNewModal(root, categories) }, [
+          '＋ 新建文章',
+        ]),
       ]),
     ),
     main,

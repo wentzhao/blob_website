@@ -3,6 +3,8 @@ import { Hono } from 'hono'
 import {
   scanArticles, readArticle, saveArticle, createArticle, deleteArticle, LANGS,
 } from './store.mjs'
+import { basename, extname } from 'node:path'
+import matter from 'gray-matter'
 
 const articles = new Hono()
 
@@ -56,6 +58,57 @@ articles.post('/', async (c) => {
   const body = await c.req.json().catch(() => null)
   if (!body?.path) return c.json({ error: 'path 不能为空' }, 400)
   const result = await createArticle(body.path, body.lang || 'zh-cn', body.directory)
+  if (result.error) return c.json(result, 400)
+  return c.json(result)
+})
+
+// POST /api/articles/import  multipart: file + path + lang + directory
+articles.post('/import', async (c) => {
+  const form = await c.req.formData().catch(() => null)
+  const file = form?.get('file')
+  const path = String(form?.get('path') || '').trim()
+  const lang = String(form?.get('lang') || 'zh-cn')
+  const directory = String(form?.get('directory') || '').trim()
+
+  if (!file || typeof file.text !== 'function') return c.json({ error: '请选择 Markdown 文件' }, 400)
+  if (extname(file.name || '').toLowerCase() !== '.md') {
+    return c.json({ error: '只支持导入 .md Markdown 文件' }, 400)
+  }
+  if (!path) return c.json({ error: '文章路径不能为空' }, 400)
+  if (!directory) return c.json({ error: '请选择目录' }, 400)
+  if (!LANGS.includes(lang)) return c.json({ error: `不支持的语言: ${lang}` }, 400)
+
+  let existing
+  try {
+    existing = await readArticle(path)
+  } catch (error) {
+    return c.json({ error: error?.message || '无法读取目标文章' }, 400)
+  }
+  if (existing?.files[lang]) {
+    return c.json({ error: `文章语言版本已存在: ${path}/${lang}.md，请更换路径或语言` }, 409)
+  }
+
+  let parsed
+  try {
+    parsed = matter(await file.text())
+  } catch (error) {
+    return c.json({ error: `Markdown frontmatter 解析失败: ${error?.message || error}` }, 400)
+  }
+
+  const sourceName = basename(path)
+  const importedData = parsed.data && typeof parsed.data === 'object' ? { ...parsed.data } : {}
+  const data = {
+    title: typeof importedData.title === 'string' && importedData.title.trim() ? importedData.title : sourceName,
+    pubDate: importedData.pubDate || new Date().toISOString().slice(0, 10),
+    description: typeof importedData.description === 'string' ? importedData.description : '',
+    image: typeof importedData.image === 'string' ? importedData.image : '',
+    // 导入默认保持草稿，避免本地文件被意外公开；可在编辑器中手动发布
+    draft: true,
+    directory,
+    pinTop: typeof importedData.pinTop === 'number' ? importedData.pinTop : 0,
+  }
+
+  const result = await saveArticle(path, lang, { data, body: parsed.content })
   if (result.error) return c.json(result, 400)
   return c.json(result)
 })

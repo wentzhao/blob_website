@@ -32,6 +32,15 @@ export const api = {
     return req<{ path: string }>('/api/articles', { method: 'POST', body: JSON.stringify(body) })
   },
 
+  importArticle(file: File, body: { path: string; lang: string; directory: string }) {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('path', body.path)
+    fd.append('lang', body.lang)
+    fd.append('directory', body.directory)
+    return req<{ path: string }>('/api/articles/import', { method: 'POST', body: fd })
+  },
+
   save(path: string, lang: string, body: { data: FrontmatterData; body: string }) {
     return req<{ path: string }>(`/api/articles/${encodePath(path)}/${lang}`, {
       method: 'PUT',

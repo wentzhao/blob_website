@@ -70,6 +70,14 @@ body {
   gap: 16px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .cms-logo {
   margin: 0;
   font-size: 20px;
