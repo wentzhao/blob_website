@@ -1,6 +1,6 @@
 # 我的笔记项目使用文档
 
-本文面向需要维护、写作、调整页面或发布本站的使用者，说明项目目录、文章写作方式、首页分类、页面布局、国际化、CMS 和发布流程。
+本文面向需要维护、写作、调整页面或发布本站的使用者，说明项目目录、文章写作方式、站点入口、笔记首页、页面布局、国际化、CMS 和发布流程。
 
 本文以当前代码为准。项目架构背景可参考 .ai_docs/project_overview.md，基础项目说明可参考 README.md。
 
@@ -10,8 +10,8 @@
 
 - 文章以 Markdown 文件保存。
 - Astro 在构建时生成静态 HTML。
-- 支持中文和英文文章版本。
-- 首页按顶级分类展示文章和目录说明。
+- 公开站点只生成中文路由和中文内容。
+- 根路径是站点入口，`/note/` 按顶级分类展示文章和目录说明。
 - 文章详情页使用“左侧知识树 + 中央正文 + 右侧本页目录”的布局。
 - 支持 Markdown 扩展、代码高亮、KaTeX、RSS、Pagefind 搜索、深色模式和可选评论。
 - 本地 CMS 直接读写 src/content/blog，不使用数据库。
@@ -24,7 +24,7 @@
 src/content/blog/                  博客文章和文章图片
 src/content/spec/                  关于页、友链页等说明性 Markdown
 src/content.config.ts              内容集合和 frontmatter schema
-src/content/navigation.ts          首页顶级分类及目录说明
+src/content/navigation.ts          笔记首页顶级分类及目录说明
 src/config.ts                      站点、主题、评论和许可证配置
 src/pages/                         页面入口和路由
 src/layouts/                       全站布局
@@ -355,13 +355,13 @@ Layout.astro 负责更底层的页面文档结构：
 
 全局基础规则位于 src/styles/global.css。其中 .page-shell 控制大多数页面的水平宽度，.site-main 控制主内容区域的基础高度。
 
-### 7.3 首页布局
+### 7.3 站点入口与笔记首页布局
 
-首页入口是 src/pages/[...locale]/[...page].astro，负责首页标题、介绍文字、公开文章数量、归档入口、顶级分类遍历和整体间距。
+根路径入口是 src/pages/[...locale]/[...page].astro，负责主站介绍与三个站点卡片。只有笔记站卡片可进入 `/note/`；项目站和实验站当前仅显示“即将开放”，不对应路由。
 
-分类区块由 src/components/knowledge/SectionOverview.astro 负责，显示分类名称、简介、目录说明、最近文章和归档链接。
+笔记首页入口是 src/pages/[...locale]/note.astro，负责 Note 标题、介绍文字、公开文章数量、顶级分类遍历和整体间距。文章、归档和知识目录仍保留顶层 `/blog/...`、`/archives/` 和 `/knowledge/...` URL，不添加 `/note/` 前缀。
 
-首页不是通过 PostCard.astro 生成，而是通过 SectionOverview 生成知识库式分类区块。
+笔记首页直接展示知识库式的最近发布和分类表，不通过 PostCard.astro 生成。
 
 ### 7.4 文章详情页布局
 
@@ -475,7 +475,7 @@ src/i18n/language/en.ts
 
 如果英文文章不存在，英文文章页会回退到中文版本并显示提示。如果文章只有英文版本，它不会出现在默认中文文章列表中。
 
-当前首页分类文字和部分首页说明直接写在 navigation.ts 和首页 Astro 文件中，并没有完全接入 i18n。修改英文首页时，需要注意这些固定中文文字。
+主站入口文案位于中文翻译文件，顶级分类说明仍由 navigation.ts 提供。公开站点只生成中文页面，不维护英文首页或英文路由。
 
 ## 10. 站点配置
 
@@ -632,7 +632,8 @@ pnpm preview
 
 ~~~text
 单页布局       修改对应 page 文件
-首页分类区块   修改 SectionOverview.astro
+主站入口       修改 [...locale]/[...page].astro
+笔记首页       修改 [...locale]/note.astro
 文章三栏布局   修改 blog/[...id].astro
 公共页面外壳   修改 MainPageLayout.astro
 全站尺寸颜色   修改 variables.css / global.css

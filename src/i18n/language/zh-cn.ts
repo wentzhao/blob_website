@@ -30,6 +30,26 @@ const translation: Translation = {
         publicArticles: "公开文章总数",
         lastUpdated: "最后更新",
     },
+    portal: {
+        ariaLabel: "站点入口",
+        eyebrow: "个人数字空间",
+        title: "欢迎来到 wentZh",
+        description: "这里汇集持续生长的笔记、项目与实验。请选择想要进入的空间。",
+        note: {
+            label: "笔记站",
+            description: "整理学习、实践与思考的知识库。",
+            action: "进入笔记站",
+        },
+        project: {
+            label: "项目站",
+            description: "用于记录正在推进的作品与项目。",
+        },
+        lab: {
+            label: "实验站",
+            description: "留给原型、试验与尚未定型的想法。",
+        },
+        comingSoon: "即将开放",
+    },
     article: {
         publishedOn: "发布于",
         updatedOn: "最后更新于",

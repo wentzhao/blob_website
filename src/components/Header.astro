@@ -3,7 +3,7 @@ import { Icon } from "astro-icon/components";
 import i18nit from "@i18n/translation";
 import { topSections } from "@/content/navigation";
 import type { MegaMenuSection } from "@utils/content-tree";
-import { baseUrl, getRelativeLocaleUrl } from "@utils/url-utils";
+import { baseUrl, getNoteHomeUrl, getRelativeLocaleUrl } from "@utils/url-utils";
 import { formatBlogMonthDay } from "@utils/time";
 import ThemeIcon from "./control/ThemeIcon.astro";
 
@@ -14,7 +14,8 @@ interface Props {
 
 const { lang: currentLang, megaMenuSections } = Astro.props;
 const t = i18nit(currentLang);
-const indexPage = getRelativeLocaleUrl(currentLang, "/");
+const portalPage = getRelativeLocaleUrl(currentLang, "/");
+const noteHomePage = getNoteHomeUrl(currentLang);
 const archivePage = getRelativeLocaleUrl(currentLang, "/archives/");
 const aboutPage = getRelativeLocaleUrl(currentLang, "/about/");
 const rssPage = baseUrl("/rss.xml");
@@ -34,13 +35,13 @@ function getMenuId(id: string) {
 
 <header id="main-header" class="site-header">
   <div class="site-header__inner">
-    <a class="site-brand" href={indexPage} aria-label={`${brandName} 首页`}>
+    <a class="site-brand" href={portalPage} aria-label={`${brandName} ${t("portal.ariaLabel")}`}>
       <span class="site-brand__mark" aria-hidden="true">/</span>
       <span>{brandName}</span>
     </a>
 
     <nav class="site-nav" aria-label="主导航">
-      <a href={indexPage}>{t("header.home")}</a>
+      <a href={noteHomePage}>{t("header.home")}</a>
       <a href={archivePage}>{t("header.archive")}</a>
       {topSections.map((section) => {
         const menuSection = getMegaMenuSection(section.id);
@@ -132,12 +133,12 @@ function getMenuId(id: string) {
     <div id="mobile-menu-overlay" class="mobile-menu__overlay"></div>
     <nav id="mobile-menu-drawer" class="mobile-menu__drawer" aria-label="移动端导航">
       <div class="mobile-menu__top">
-        <strong>{brandName}</strong>
+        <a class="mobile-menu__brand" href={portalPage} aria-label={`${brandName} ${t("portal.ariaLabel")}`}>{brandName}</a>
         <button id="mobile-menu-close" class="icon-button" type="button" aria-label="关闭导航">
           <Icon name="fa6-solid:xmark" class="h-4 w-4" />
         </button>
       </div>
-      <a href={indexPage}>{t("header.home")}</a>
+      <a href={noteHomePage}>{t("header.home")}</a>
       <a href={archivePage}>{t("header.archive")}</a>
       {topSections.map((section) => (
         <a href={getRelativeLocaleUrl(currentLang, section.directoryPath)}>
@@ -194,6 +195,8 @@ function getMenuId(id: string) {
   .mobile-menu__overlay { position: absolute; inset: 0; background: rgb(0 0 0 / .35); }
   .mobile-menu__drawer { position: absolute; right: 0; top: 0; bottom: 0; width: min(88vw, 22rem); display: flex; flex-direction: column; gap: .25rem; padding: 1.25rem; overflow: auto; background: var(--bg-color); box-shadow: -12px 0 30px var(--shadow-color); }
   .mobile-menu__top { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; margin-bottom: .5rem; border-bottom: 1px solid var(--button-border-color); }
+  .mobile-menu__brand { font-weight: 700; }
+  .mobile-menu__brand:hover { color: var(--link-color); }
   .mobile-menu__drawer > a { display: flex; flex-direction: column; gap: .18rem; padding: .7rem .75rem; border-radius: .45rem; color: var(--text-color); }
   .mobile-menu__drawer > a:hover { background: var(--button-hover-color); color: var(--link-color); }
   .mobile-menu__drawer small { color: var(--text-color-70); font-size: .75rem; line-height: 1.45; }

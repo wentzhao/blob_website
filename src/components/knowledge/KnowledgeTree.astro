@@ -1,6 +1,6 @@
 ---
 import type { ArticleTreeContext, DirectoryNode, DirectoryTreeContext } from "@utils/content-tree";
-import { getRelativeLocaleUrl } from "@utils/url-utils";
+import { getNoteHomeUrl, getRelativeLocaleUrl } from "@utils/url-utils";
 
 type TreeContext = ArticleTreeContext | DirectoryTreeContext;
 
@@ -71,7 +71,7 @@ const childrenId = (id: string) => `knowledge-tree-children-${encodeURIComponent
 ) : (
   <aside class="knowledge-tree" aria-label="知识库导航">
     <p class="knowledge-tree__label">知识库</p>
-    <a class="knowledge-tree__home" href={getRelativeLocaleUrl(lang, "/")}>全部内容</a>
+    <a class="knowledge-tree__home" href={getNoteHomeUrl(lang)}>全部内容</a>
     <nav aria-label="知识目录">
       <ul class="knowledge-tree__roots">
         {roots.map((root) => (

@@ -1,6 +1,6 @@
 ---
 import type { DirectoryTreeContext } from "@utils/content-tree";
-import { getRelativeLocaleUrl } from "@utils/url-utils";
+import { getNoteHomeUrl, getRelativeLocaleUrl } from "@utils/url-utils";
 import { formatBlogDate, formatBlogMonthDay } from "@utils/time";
 import i18nit from "@i18n/translation";
 
@@ -18,7 +18,7 @@ const articleUrl = (id: string) => getRelativeLocaleUrl(lang, `/blog/${id}/`);
 
 <div class="directory-page" data-pagefind-ignore>
   <nav class="directory-breadcrumbs" aria-label="目录路径">
-    <a href={getRelativeLocaleUrl(lang, "/")}>{t("directory.home")}</a>
+    <a href={getNoteHomeUrl(lang)}>{t("directory.home")}</a>
     {context.path.map((node, index) => (
       <>
         <span aria-hidden="true">/</span>

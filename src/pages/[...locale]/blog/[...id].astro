@@ -14,7 +14,7 @@ import { render } from "astro:content";
 import { i18n } from "astro:config/client";
 import i18nit from "@i18n/translation";
 import { Icon } from "astro-icon/components";
-import { blogCoverUrl, getRelativeLocaleUrl } from "@utils/url-utils";
+import { blogCoverUrl, getNoteHomeUrl, getRelativeLocaleUrl } from "@utils/url-utils";
 import { formatBlogDate } from "@utils/time";
 import { getBlogEntrySort } from "@utils/content-utils";
 import { getArticleTreeContext, getContentTree } from "@utils/content-tree";
@@ -53,7 +53,7 @@ const image = blogCoverUrl(entry.data.image, entry.id);
     <article class="article-main">
       <header class="article-header">
         <nav class="article-breadcrumbs" aria-label="文章路径">
-          <a href={getRelativeLocaleUrl(currentLang, "/")}>{t("directory.home")}</a>
+          <a href={getNoteHomeUrl(currentLang)}>{t("directory.home")}</a>
           {treeContext.path.map((node) => (
             <>
               <span aria-hidden="true">/</span>

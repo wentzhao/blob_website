@@ -57,3 +57,7 @@ export function getRelativeLocaleUrl(lang: string, path: string) : string {
         : joinPath(path);
     return baseUrl(localizedPath);
 }
+
+export function getNoteHomeUrl(lang: string): string {
+    return getRelativeLocaleUrl(lang, "/note/");
+}

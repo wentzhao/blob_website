@@ -28,6 +28,26 @@ export interface Translation {
         publicArticles: string;
         lastUpdated: string;
     };
+    portal?: {
+        ariaLabel: string;
+        eyebrow: string;
+        title: string;
+        description: string;
+        note: {
+            label: string;
+            description: string;
+            action: string;
+        };
+        project: {
+            label: string;
+            description: string;
+        };
+        lab: {
+            label: string;
+            description: string;
+        };
+        comingSoon: string;
+    };
     toc:string;
     category: string;
     pageNavigation: {
