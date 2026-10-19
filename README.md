@@ -33,13 +33,13 @@ pubDate: 2026-08-28
 description: 一句话摘要
 image: ""
 slugId: stable-id
-directory: deep-learning/paper-reading/transformer
-category: 深度学习
+directory: tools/workflows
+category: 工具使用
 draft: false
 pinTop: 0
 ```
 
-首次创建文章使用 `pnpm newpost -- <文章路径> <directory> zh-cn`，例如 `pnpm newpost -- deep-learning/transformer-notes deep-learning/paper-reading/transformer`。`slugId` 是独立稳定的外部标识，文章目录移动时不会自动改写；已有文章的 `slugId` 不迁移。作者只编辑 `directory`，`category` 由其根目录派生；草稿可暂时没有目录，但公开文章缺少或使用未知目录都会使构建失败。
+首次创建文章使用 `pnpm newpost -- <文章路径> <directory> zh-cn`，例如 `pnpm newpost -- workflow-notes tools/workflows`。`slugId` 是独立稳定的外部标识，文章目录移动时不会自动改写；已有文章的 `slugId` 不迁移。作者只编辑 `directory`，`category` 由其根目录派生；草稿可暂时没有目录，但公开文章缺少或使用未知目录都会使构建失败。
 
 目录注册表集中在 `src/content/directory-tree.json`，`src/content/navigation.ts` 负责校验并投影顶级导航。公开列表、详情路由、RSS 和 Pagefind 在所有环境都会过滤 `draft: true` 的文章；公开站点只输出中文内容。
 

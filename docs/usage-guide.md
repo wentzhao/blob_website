@@ -250,13 +250,12 @@ slugId 是同一文章不同语言版本共享的稳定外部标识。它不决�
 
 ### 6.1 顶级分类
 
-顶级分类定义在 src/content/navigation.ts。当前包括：
+顶级分类和下级目录定义在 src/content/directory-tree.json。当前顶级分类包括：
 
 ~~~text
-技术笔记
-项目实践
+深度学习
+代码算法
 工具使用
-随想记录
 ~~~
 
 文章应使用顶级分类作为 category：
