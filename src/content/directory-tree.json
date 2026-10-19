@@ -1,8 +1,5 @@
 [
   { "id": "deep-learning", "parentId": null, "category": "深度学习", "labels": { "zh-cn": "深度学习", "en": "Deep Learning" }, "descriptions": { "zh-cn": "模型、论文和实验记录。", "en": "Models, papers, and experiment notes." } },
   { "id": "code-algorithm", "parentId": null, "category": "代码算法", "labels": { "zh-cn": "代码算法", "en": "Code & Algorithms" }, "descriptions": { "zh-cn": "算法、编程语言与工程参考。", "en": "Algorithms, languages, and engineering references." } },
-  { "id": "tools", "parentId": null, "category": "工具使用", "labels": { "zh-cn": "工具使用", "en": "Tools" }, "descriptions": { "zh-cn": "让学习和开发更顺手的工具。", "en": "Tools for smoother learning and development." } },
-  { "id": "tools/common-tools", "parentId": "tools", "labels": { "zh-cn": "常用工具", "en": "Common Tools" }, "descriptions": { "zh-cn": "日常使用的工具。", "en": "Everyday tools." } },
-  { "id": "tools/other-tools", "parentId": "tools", "labels": { "zh-cn": "其他工具", "en": "Other Tools" }, "descriptions": { "zh-cn": "其他实用工具。", "en": "Other useful tools." } },
-  { "id": "tools/workflows", "parentId": "tools", "labels": { "zh-cn": "工作流", "en": "Workflows" }, "descriptions": { "zh-cn": "可复用的工作流。", "en": "Reusable workflows." } }
+  { "id": "tools", "parentId": null, "category": "工具使用", "labels": { "zh-cn": "工具使用", "en": "Tools" }, "descriptions": { "zh-cn": "让学习和开发更顺手的工具。", "en": "Tools for smoother learning and development." } }
 ]

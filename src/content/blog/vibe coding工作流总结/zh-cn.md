@@ -4,7 +4,7 @@ pubDate: '2026-08-29'
 description: ''
 image: ''
 draft: false
-directory: tools/workflows
+directory: tools
 pinTop: 0
 slugId: b25b52e5-dce9-411e-96fc-441883a92e07
 category: 工具使用

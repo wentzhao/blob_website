@@ -2,7 +2,7 @@
 title: 从一篇笔记开始
 pubDate: '2026-08-28'
 description: 这是一个用于验证知识库式博客体验的示例文章。
-directory: tools/common-tools
+directory: tools
 category: 工具使用
 image: ''
 draft: false
