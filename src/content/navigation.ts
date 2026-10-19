@@ -19,12 +19,11 @@ export type NavigationSection = {
 };
 
 export function validateDirectoryDefinitions(input: DirectoryDefinition[]) {
-  // English labels remain required for registry completeness, but are not rendered by the Chinese-only public site.
   const byId = new Map<string, DirectoryDefinition>();
   for (const definition of input) {
     if (!definition.id || byId.has(definition.id)) throw new Error(`Duplicate directory id: ${definition.id}`);
-    if (!definition.labels["zh-cn"] || !definition.labels.en) throw new Error(`Directory ${definition.id} requires zh-cn and en labels`);
-    if (!definition.descriptions["zh-cn"] || !definition.descriptions.en) throw new Error(`Directory ${definition.id} requires zh-cn and en descriptions`);
+    if (!definition.labels["zh-cn"]) throw new Error(`Directory ${definition.id} requires a zh-cn label`);
+    if (!definition.descriptions["zh-cn"]) throw new Error(`Directory ${definition.id} requires a zh-cn description`);
     byId.set(definition.id, definition);
   }
   for (const definition of input) {

@@ -19,8 +19,8 @@ async function getDirectoryDefinitions() {
       const byId = new Map()
       for (const definition of definitions) {
         if (!definition.id || byId.has(definition.id)) throw new Error(`目录配置包含重复 ID: ${definition.id}`)
-        if (!definition.labels?.['zh-cn'] || !definition.labels?.en) throw new Error(`目录 ${definition.id} 缺少双语标签`)
-        if (!definition.descriptions?.['zh-cn'] || !definition.descriptions?.en) throw new Error(`目录 ${definition.id} 缺少双语说明`)
+        if (!definition.labels?.['zh-cn']) throw new Error(`目录 ${definition.id} 缺少中文标签`)
+        if (!definition.descriptions?.['zh-cn']) throw new Error(`目录 ${definition.id} 缺少中文说明`)
         byId.set(definition.id, definition)
       }
       for (const definition of definitions) {

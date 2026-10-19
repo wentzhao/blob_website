@@ -32,7 +32,7 @@ const articleUrl = (id: string) => getRelativeLocaleUrl(lang, `/blog/${id}/`);
   </nav>
 
   <header class="directory-header">
-    <p class="eyebrow">{directory.id}</p>
+    <p class="eyebrow">{context.path[0].label}</p>
     <h1>{directory.label}</h1>
     <p class="directory-description">{directory.description}</p>
   </header>

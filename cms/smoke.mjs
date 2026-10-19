@@ -82,6 +82,20 @@ async function apiJson(path, init) {
   return { res, data }
 }
 
+const directoryResult = await apiJson('/api/meta')
+if (!directoryResult.res.ok) throw new Error('FAIL: 目录元数据加载失败: ' + JSON.stringify(directoryResult.data))
+for (const [id, label] of [['basics', '基础'], ['career', '就业'], ['research', '课题'], ['tools', '工具使用']]) {
+  const root = directoryResult.data.directories.find((directory) => directory.id === id)
+  if (!root || root.parentId !== null || root.depth !== 0 || root.label !== label) {
+    throw new Error('FAIL: 顶级目录元数据不正确: ' + id)
+  }
+}
+const nmrDirectory = directoryResult.data.directories.find((directory) => directory.id === 'nmr')
+if (!nmrDirectory || nmrDirectory.parentId !== 'basics' || nmrDirectory.depth !== 1 || !nmrDirectory.label.includes('NMR')) {
+  throw new Error('FAIL: NMR 子目录层级或标签不正确')
+}
+console.log('PASS: 基础、就业、课题、工具使用目录元数据及 NMR 子目录层级')
+
 // ---------- 1. 列表页渲染 ----------
 await render(renderList)
 const btnNew = document.getElementById('btn-new')
@@ -126,7 +140,7 @@ const inputs = app.querySelectorAll('.modal input')
 inputs[0].value = 'smoke-test-post' // 路径
 const firstDirectory = await waitFor(() => app.querySelectorAll('.modal select')[1]?.options.length > 1, 8000)
 if (!firstDirectory) throw new Error('FAIL: 新建文章目录选项未加载')
-app.querySelectorAll('.modal select')[1].value = 'deep-learning'
+app.querySelectorAll('.modal select')[1].value = 'nmr'
 const submitBtn = document.getElementById('modal-submit')
 submitBtn.click()
 
@@ -137,6 +151,12 @@ console.log('PASS: 创建成功并跳转编辑页 →', location.hash)
 
 // ---------- 4. 编辑器渲染 + 预览 ----------
 const path = decodeURIComponent(location.hash.replace(/^#\/edit\//, ''))
+const createdArticle = await apiJson('/api/articles/' + encodeURIComponent(path))
+const createdData = createdArticle.data.files?.['zh-cn']?.data
+if (!createdArticle.res.ok || createdData?.directory !== 'nmr' || createdData?.category !== '基础') {
+  throw new Error('FAIL: NMR 子目录新建文章未归入基础分类')
+}
+console.log('PASS: NMR 子目录文章归入基础分类')
 await render(renderEditor, path)
 await sleep(500)
 const titleInput = document.getElementById('f-title')
@@ -181,7 +201,7 @@ const modalInputs = app.querySelectorAll('.modal input')
 modalInputs[0].value = '' // 路径留空
 const secondDirectory = await waitFor(() => app.querySelectorAll('.modal select')[1]?.options.length > 1, 8000)
 if (!secondDirectory) throw new Error('FAIL: 自动路径新建的目录选项未加载')
-app.querySelectorAll('.modal select')[1].value = 'deep-learning'
+app.querySelectorAll('.modal select')[1].value = 'nmr'
 document.getElementById('modal-submit').click()
 const autoPath = await waitFor(() => {
   const m = location.hash.match(/^#\/edit\/(\d{4})\/(\d{4}-\d{2}-\d{2})$/)
@@ -206,7 +226,7 @@ const yesterday = localDate(new Date(Date.now() - 24 * 60 * 60 * 1000))
 try {
   let result = await apiJson('/api/articles', {
     method: 'POST',
-    body: JSON.stringify({ path: updatedPath, lang: 'zh-cn', directory: 'deep-learning' }),
+    body: JSON.stringify({ path: updatedPath, lang: 'zh-cn', directory: 'nmr' }),
   })
   if (!result.res.ok) throw new Error('FAIL: updatedDate 测试文章创建失败: ' + JSON.stringify(result.data))
 
@@ -279,7 +299,7 @@ try {
   })
   if (result.res.status !== 400 || !result.data.error) throw new Error('FAIL: 非法 updatedDate 未被拒绝')
 
-  await writeFile(join(BLOG_DIR, updatedPath, 'zh-cn.md'), '---\ntitle: 非法日期\npubDate: 2026-01-01\nupdatedDate: 2026-02-30\ndraft: true\nslugId: smoke-invalid\ndirectory: deep-learning\ncategory: 深度学习\npinTop: 0\n---\n')
+  await writeFile(join(BLOG_DIR, updatedPath, 'zh-cn.md'), '---\ntitle: 非法日期\npubDate: 2026-01-01\nupdatedDate: 2026-02-30\ndraft: true\nslugId: smoke-invalid\ndirectory: nmr\ncategory: 基础\npinTop: 0\n---\n')
   result = await apiJson('/api/articles/' + encodeURIComponent(updatedPath))
   if (result.res.status !== 422 || !result.data.error) throw new Error('FAIL: 非法 frontmatter 读取未返回明确错误')
   console.log('PASS: updatedDate 自动更新、空语言、清空/覆盖和非法输入')

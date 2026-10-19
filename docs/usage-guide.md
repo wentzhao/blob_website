@@ -250,66 +250,59 @@ slugId 是同一文章不同语言版本共享的稳定外部标识。它不决�
 
 ### 6.1 顶级分类
 
-顶级分类和下级目录定义在 src/content/directory-tree.json。当前顶级分类包括：
+顶级分类和直属主题统一定义在 src/content/directory-tree.json，由 src/content/navigation.ts 提供给导航、知识树、目录页和 CMS。当前共有 10 个目录节点，分为顶级分类与直属主题两层，主题就是末级目录：
 
 ~~~text
-深度学习
-代码算法
+基础
+└─ 核磁共振（NMR）
+就业
+├─ 生成式软件工程
+└─ CS336 课程
+课题
+├─ SE2CSNet
+├─ SE2PSNet
+└─ Agent
 工具使用
 ~~~
 
-文章应使用顶级分类作为 category：
+“基础、就业、课题”及其直属主题参考 E:/2026/XMU_Note 的文件夹结构维护。Agent、SE2CSNet、SE2PSNet 等主题均为末级目录，其下的实验、论文附件、图片和代码快照等更深目录已从站点移除。知识树默认全部展开，各目录仍可手动折叠。“工具使用”及其既有文章继续保留。
+
+源目录仅作为目录结构参考，不导入其中的笔记正文或附件，不修改或删除源文件，也不跟随 node_modules Junction。目录结构保存在仓库中，站点运行和构建不依赖源 E 盘目录。
+
+公开导航使用中文名称，技术名保留。
+
+### 6.2 文章归属与主题目录
+
+当前目录按顶级分类和直属主题两层维护，每个已登记目录都有 /knowledge/{目录 ID}/ 页面；空目录也可以浏览。文章通过 directory 选择具体目录，通过 category 声明其顶级分类。例如，归属 SE2CSNet 主题的文章使用：
 
 ~~~yaml
-category: 技术笔记
+category: 课题
+directory: se2csnet
 ~~~
 
-分类名称必须与导航中的顶级 label 完全一致。
+对应主题目录页为 /knowledge/se2csnet/。CMS 新建、导入和编辑文章时提供带层级缩进的目录选择，并根据所选目录自动写入顶级 category。
 
-### 6.2 “Web 开发”等文字的含义
+直接编辑 Markdown 时，公开文章必须填写已登记的 directory，且 category 必须与该目录所属根节点的 category 一致，否则构建会报错。目录 ID 与文章文件路径相互独立；修改 directory 会改变知识树归属，不会自动移动文章文件或修改文章 URL。
 
-“Web 开发”定义在 src/content/navigation.ts 的 children 中：
+### 6.3 修改分类与目录
 
-~~~ts
-{
-  id: "web",
-  label: "Web 开发",
-  description: "前端、Astro 与 Web 工程。"
-}
-~~~
+在 src/content/directory-tree.json 中维护以下字段：
 
-它显示在首页“技术笔记”区块的目录列表中，是帮助读者理解主题范围的说明文字。
+- id：唯一目录标识，也是目录页路径的一部分。
+- parentId：父目录 ID；顶级分类使用 null。
+- category：仅根目录填写，作为所有下级目录中文章的顶级分类。
+- labels["zh-cn"]：公开显示的中文目录名称。
+- descriptions["zh-cn"]：中文目录简介。
 
-目前它不是实际的二级分类：
+维护当前两层目录时，顶级分类使用 parentId: null，直属主题的 parentId 指向顶级分类 ID；主题下不再登记更深目录。src/content/navigation.ts 会生成顶级导航及直属主题，知识树默认全部展开。来源文件夹后续发生变化时，只将顶级分类和直属主题的调整同步到此 JSON。
 
-- 不会自动生成 /web 路由。
-- 不会生成二级筛选链接。
-- id: web 当前不参与文章匹配。
-- 文章如果写 category: Web 开发，不会自动归入“技术笔记”区块。
+仅修改显示名称不需要变更目录 ID；修改根目录的 category 时，要同步更新其下已有文章的 category。修改目录 ID 时，要同步检查子目录的 parentId、文章的 directory 和已有目录链接，因为目录页 URL 也会改变。
 
-如果文章希望出现在首页“技术笔记”下，应该写：
+### 6.4 笔记首页统计与文章数量
 
-~~~yaml
-category: 技术笔记
-~~~
+笔记首页 /note/ 的顶部显示顶级分类数、公开文章总数和最后更新时间；“最新发布”显示按发布日期降序排列的最近 5 篇公开中文文章，数据来自 getBlogEntrySort()。
 
-### 6.3 修改首页分类文字
-
-修改 src/content/navigation.ts 中的以下字段：
-
-- label：分类名称。
-- description：分类简介。
-- path：分类归档链接。
-- children[].label：目录说明名称。
-- children[].description：目录说明文字。
-
-修改顶级 label 时，需要同步更新已有文章的 category，否则这些文章将无法匹配到新的首页分类。
-
-### 6.4 首页文章数量
-
-每个顶级分类的首页区块只显示该分类最近的 3 篇公开文章。全部文章可以通过“查看全部”进入归档页。
-
-首页当前使用 getBlogEntrySort() 的公开文章结果，按发布日期降序排列。
+“顶级分类”表按根目录展示直属子目录数量、包含全部下级目录的文章总数，以及这些文章的最后更新时间。更新时间优先取 updatedDate，未填写时使用 pubDate；没有公开文章的分类显示“暂无更新”。点击分类进入对应目录页，全部公开文章也可在归档页查看。
 
 ## 7. 页面布局修改指南
 

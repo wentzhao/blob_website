@@ -1,5 +1,12 @@
 [
-  { "id": "deep-learning", "parentId": null, "category": "深度学习", "labels": { "zh-cn": "深度学习", "en": "Deep Learning" }, "descriptions": { "zh-cn": "模型、论文和实验记录。", "en": "Models, papers, and experiment notes." } },
-  { "id": "code-algorithm", "parentId": null, "category": "代码算法", "labels": { "zh-cn": "代码算法", "en": "Code & Algorithms" }, "descriptions": { "zh-cn": "算法、编程语言与工程参考。", "en": "Algorithms, languages, and engineering references." } },
-  { "id": "tools", "parentId": null, "category": "工具使用", "labels": { "zh-cn": "工具使用", "en": "Tools" }, "descriptions": { "zh-cn": "让学习和开发更顺手的工具。", "en": "Tools for smoother learning and development." } }
+  { "id": "basics", "parentId": null, "category": "基础", "labels": { "zh-cn": "基础" }, "descriptions": { "zh-cn": "基础知识与学习笔记。" } },
+  { "id": "nmr", "parentId": "basics", "labels": { "zh-cn": "核磁共振（NMR）" }, "descriptions": { "zh-cn": "核磁共振基础、化学位移与偶合常数。" } },
+  { "id": "career", "parentId": null, "category": "就业", "labels": { "zh-cn": "就业" }, "descriptions": { "zh-cn": "面向就业的课程学习与实践。" } },
+  { "id": "generative-software-engineering", "parentId": "career", "labels": { "zh-cn": "生成式软件工程" }, "descriptions": { "zh-cn": "生成式软件工程学习与实践。" } },
+  { "id": "cs336", "parentId": "career", "labels": { "zh-cn": "CS336 课程" }, "descriptions": { "zh-cn": "CS336 课程笔记与练习。" } },
+  { "id": "research", "parentId": null, "category": "课题", "labels": { "zh-cn": "课题" }, "descriptions": { "zh-cn": "课题论文、实验与研究资料。" } },
+  { "id": "paper-agents", "parentId": "research", "labels": { "zh-cn": "Agent" }, "descriptions": { "zh-cn": "将研究论文转化为可交互、可靠的智能体。" } },
+  { "id": "se2csnet", "parentId": "research", "labels": { "zh-cn": "SE2CSNet" }, "descriptions": { "zh-cn": "SE2CSNet 论文阅读与课题资料。" } },
+  { "id": "se2psnet", "parentId": "research", "labels": { "zh-cn": "SE2PSNet" }, "descriptions": { "zh-cn": "SE2PSNet 论文阅读与课题资料。" } },
+  { "id": "tools", "parentId": null, "category": "工具使用", "labels": { "zh-cn": "工具使用" }, "descriptions": { "zh-cn": "让学习和开发更顺手的工具。" } }
 ]
